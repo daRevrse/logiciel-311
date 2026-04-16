@@ -5,6 +5,7 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
+  CheckCircle2,
   Clock,
   Users,
   MapPin,
@@ -131,7 +132,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              Tableau de bord {isSuperAdmin() && <span className="text-purple-600">Super Admin</span>}
+              Tableau de bord {isSuperAdmin() && <span className="text-primary-600">Super Admin</span>}
             </h1>
             <p className="text-gray-600 mt-1">
               {isSuperAdmin()
@@ -187,8 +188,8 @@ const Dashboard = () => {
                     Total dans le système
                   </p>
                 </div>
-                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-purple-600" />
+                <div className="h-12 w-12 bg-primary-50 rounded-lg flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-primary-600" />
                 </div>
               </div>
             </Card>
@@ -256,79 +257,51 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Cartes de statistiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total signalements */}
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total signalements</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {overview.totalReports || 0}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Tous les signalements
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
+        {/* KPI Widgets */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          {/* Widget Total */}
+          <div className="card flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-6 w-6 text-primary-600" />
             </div>
-          </Card>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{overview.totalReports || 0}</p>
+              <p className="text-sm text-muted">Total signalements</p>
+            </div>
+          </div>
 
-          {/* En attente */}
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">En attente</p>
-                <p className="text-3xl font-bold text-yellow-600">
-                  {reportsByStatus.pending || 0}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Nécessitent une action
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
+          {/* Widget En cours */}
+          <div className="card flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-6 w-6 text-amber-600" />
             </div>
-          </Card>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{(reportsByStatus.pending || 0) + (reportsByStatus.in_progress || 0)}</p>
+              <p className="text-sm text-muted">En cours</p>
+            </div>
+          </div>
 
-          {/* En cours */}
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">En cours</p>
-                <p className="text-3xl font-bold text-orange-600">
-                  {reportsByStatus.in_progress || 0}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  En traitement
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-orange-600" />
-              </div>
+          {/* Widget Résolus */}
+          <div className="card flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-6 w-6 text-emerald-600" />
             </div>
-          </Card>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{reportsByStatus.resolved || 0}</p>
+              <p className="text-sm text-muted">Résolus</p>
+            </div>
+          </div>
 
-          {/* Résolus */}
-          <Card>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Résolus</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {reportsByStatus.resolved || 0}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Taux: {overview.resolutionRate || 0}%
-                </p>
-              </div>
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
+          {/* Widget Nouveaux */}
+          <div className="card flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
-          </Card>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{dashboardData?.data?.recentActivityCount || 0}</p>
+              <p className="text-sm text-muted">Nouveaux (récents)</p>
+            </div>
+          </div>
         </div>
 
         {/* Graphiques et données détaillées */}
@@ -443,8 +416,8 @@ const Dashboard = () => {
 
           <Card>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Clock className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 bg-primary-50 rounded-lg flex items-center justify-center">
+                <Clock className="h-5 w-5 text-primary-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Activité récente</p>
@@ -556,7 +529,9 @@ const Dashboard = () => {
                         <Calendar className="h-3 w-3 mr-1" />
                         {formatDate(report.created_at)}
                       </span>
-                      <span>{report.supports_count || 0} appuis</span>
+                      <span className="inline-flex items-center gap-1 text-support font-semibold text-sm">
+                        <ThumbsUp className="h-4 w-4" />{report.supports_count || 0}
+                      </span>
                       <span>Priorité: {report.priority_score?.toFixed(1) || '0.0'}</span>
                     </div>
                   </div>
