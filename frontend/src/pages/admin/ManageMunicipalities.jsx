@@ -299,8 +299,8 @@ const ManageMunicipalities = () => {
 
           <Card>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Key className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                <Key className="h-5 w-5 text-primary-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Avec licence</p>
@@ -402,7 +402,7 @@ const ManageMunicipalities = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleOpenLicenseModal(municipality)}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="text-primary-600 hover:text-primary-900"
                             title="Gérer la licence"
                           >
                             <Key className="h-4 w-4" />

@@ -118,7 +118,7 @@ const ManageUsers = () => {
 
   const getRoleBadge = (role) => {
     const badges = {
-      super_admin: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Super Admin' },
+      super_admin: { bg: 'bg-primary-100', text: 'text-primary-800', label: 'Super Admin' },
       admin: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Admin' },
       citizen: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Citoyen' }
     };
@@ -209,8 +209,8 @@ const ManageUsers = () => {
 
           <Card>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                <Shield className="h-5 w-5 text-primary-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Admins</p>
