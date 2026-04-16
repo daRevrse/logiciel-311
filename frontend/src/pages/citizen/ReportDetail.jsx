@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, User, ThumbsUp, ArrowLeft, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Calendar, User, ArrowLeft, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useReports } from '../../hooks/useReports';
 import { useSupports } from '../../hooks/useSupports';
 import { useAuth } from '../../contexts/AuthContext';
@@ -84,7 +84,7 @@ const ReportDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
@@ -92,7 +92,7 @@ const ReportDetail = () => {
 
   if (!report) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <Card>
           <p className="text-gray-600">Signalement introuvable</p>
         </Card>
@@ -101,7 +101,7 @@ const ReportDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-surface py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Bouton retour */}
         <Button
@@ -237,29 +237,20 @@ const ReportDetail = () => {
           )}
         </Card>
 
-        {/* Bouton d'appui */}
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">
-                Soutenez ce signalement
-              </h3>
-              <p className="text-sm text-gray-600">
-                {supportCount} {supportCount > 1 ? 'personnes ont' : 'personne a'} apporté leur appui
-              </p>
-            </div>
-
-            <Button
-              variant={hasSupported ? 'secondary' : 'primary'}
-              onClick={handleSupportToggle}
-              loading={supportLoading}
-              className="flex items-center gap-2"
-            >
-              <ThumbsUp className={`h-4 w-4 ${hasSupported ? 'fill-current' : ''}`} />
-              {hasSupported ? 'Retirer mon appui' : 'Apporter mon appui'}
-            </Button>
-          </div>
-        </Card>
+        {/* Bouton inline — desktop uniquement */}
+        <div className="hidden lg:block mt-6">
+          <Button
+            variant="support"
+            size="lg"
+            onClick={handleSupportToggle}
+            disabled={hasSupported || supportLoading}
+            loading={supportLoading}
+          >
+            {hasSupported
+              ? `Vous avez appuyé (${report?.supports_count || 0})`
+              : `Appuyer (${report?.supports_count || 0})`}
+          </Button>
+        </div>
 
         {/* Historique des changements de statut (si admin a ajouté des notes) */}
         {report.status_history && report.status_history.length > 0 && (
@@ -287,6 +278,22 @@ const ReportDetail = () => {
             </div>
           </Card>
         )}
+
+        {/* Barre fixe bas — mobile uniquement */}
+        <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 lg:hidden bg-white border-t border-gray-200 pt-3 z-10">
+          <Button
+            variant="support"
+            fullWidth
+            size="lg"
+            onClick={handleSupportToggle}
+            disabled={hasSupported || supportLoading}
+            loading={supportLoading}
+          >
+            {hasSupported
+              ? `Vous avez appuyé (${report?.supports_count || 0})`
+              : `Appuyer (${report?.supports_count || 0})`}
+          </Button>
+        </div>
 
         {/* Modal de confirmation de suppression */}
         <ConfirmModal
