@@ -19,9 +19,11 @@ const Input = ({
   inputClassName = '',
   ...props
 }) => {
-  const inputClasses = `input-field ${error ? 'border-red-500 focus:ring-red-500' : ''} ${
-    disabled ? 'bg-gray-100 cursor-not-allowed' : ''
-  } ${inputClassName}`;
+  const inputClasses = `input-field transition-shadow ${
+    error
+      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+      : 'focus:ring-primary-500 focus:border-primary-500'
+  } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''} ${inputClassName}`;
 
   return (
     <div className={`mb-4 ${className}`}>
