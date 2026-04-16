@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -61,5 +63,9 @@ body {
 
   .badge-confirmed {
     @apply badge bg-primary-50 text-primary-800 border-primary-300;
+  }
+
+  .glass-header {
+    @apply bg-white/80 backdrop-blur-md shadow-sm;
   }
 }
