@@ -3,12 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle,
-  AlertTriangle,
-  FileText,
-  MapPin,
-  Camera,
-  Eye
+  CheckCircle
 } from 'lucide-react';
 import { Button, Card, Input, Textarea, PhotoUploader } from '../../components/common';
 import { CategorySelector, LocationPicker } from '../../components/citizen';
@@ -44,13 +39,9 @@ const CreateReport = () => {
 
   const totalSteps = 5;
 
-  const steps = [
-    { number: 1, title: 'Catégorie', icon: FileText },
-    { number: 2, title: 'Description', icon: AlertTriangle },
-    { number: 3, title: 'Localisation', icon: MapPin },
-    { number: 4, title: 'Photos', icon: Camera },
-    { number: 5, title: 'Récapitulatif', icon: Eye }
-  ];
+  const stepLabels = ['Catégorie', 'Description', 'Localisation', 'Photos', 'Récapitulatif'];
+
+  const categoryChips = ['Voirie', 'Éclairage', 'Eau', 'Déchets', 'Autre'];
 
   useEffect(() => {
     loadCategories();
@@ -208,42 +199,24 @@ const CreateReport = () => {
   };
 
   const renderStepIndicator = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between">
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const isActive = currentStep === step.number;
-          const isCompleted = currentStep > step.number;
-
-          return (
-            <React.Fragment key={step.number}>
-              <div className="flex flex-col items-center">
-                <div
-                  className={`
-                    w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all
-                    ${isActive ? 'bg-primary-600 text-white scale-110' : ''}
-                    ${isCompleted ? 'bg-green-500 text-white' : ''}
-                    ${!isActive && !isCompleted ? 'bg-gray-200 text-gray-500' : ''}
-                  `}
-                >
-                  {isCompleted ? (
-                    <CheckCircle className="h-6 w-6" />
-                  ) : (
-                    <Icon className="h-6 w-6" />
-                  )}
-                </div>
-                <span className={`text-xs mt-2 font-medium hidden sm:block ${isActive ? 'text-primary-600' : 'text-gray-500'}`}>
-                  {step.title}
-                </span>
-              </div>
-
-              {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+    <div className="flex items-center mb-8 px-2">
+      {stepLabels.map((label, idx) => (
+        <React.Fragment key={idx}>
+          <div className="flex flex-col items-center flex-shrink-0">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+              idx < currentStep - 1 ? 'bg-support text-white' :
+              idx === currentStep - 1 ? 'bg-primary-600 text-white' :
+              'bg-gray-200 text-gray-500'
+            }`}>
+              {idx < currentStep - 1 ? '✓' : idx + 1}
+            </div>
+            <span className="text-xs mt-1 text-muted hidden sm:block text-center w-16 leading-tight">{label}</span>
+          </div>
+          {idx < stepLabels.length - 1 && (
+            <div className={`flex-1 h-0.5 mx-1 ${idx < currentStep - 1 ? 'bg-support' : 'bg-gray-200'}`} />
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 
@@ -258,6 +231,26 @@ const CreateReport = () => {
             <p className="text-gray-600 mb-6">
               Sélectionnez la catégorie qui correspond le mieux à votre signalement
             </p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {categoryChips.map(cat => (
+                <button key={cat} type="button"
+                  onClick={() => {
+                    const matched = categories.find(c => c.name === cat);
+                    if (matched) {
+                      setFormData(p => ({ ...p, category: matched, categoryId: matched.id }));
+                      setErrors(e => ({ ...e, category: null }));
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                    formData.category?.name === cat
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400'
+                  }`}>
+                  {cat}
+                </button>
+              ))}
+            </div>
 
             <CategorySelector
               categories={categories}
@@ -428,7 +421,7 @@ const CreateReport = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-surface py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* En-tête */}
         <div className="mb-8">
@@ -471,6 +464,7 @@ const CreateReport = () => {
           {currentStep < totalSteps ? (
             <Button
               variant="primary"
+              fullWidth
               onClick={handleNext}
               disabled={isSubmitting}
             >
@@ -480,6 +474,7 @@ const CreateReport = () => {
           ) : (
             <Button
               variant="primary"
+              fullWidth
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
