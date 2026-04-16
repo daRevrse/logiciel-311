@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Input, Card } from '../../components/common';
+import { Button, Input } from '../../components/common';
 import { Map, Smartphone, Fingerprint, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -174,18 +174,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
+      <div className="bg-white rounded-[12px] shadow-card w-full max-w-md p-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <Map className="h-16 w-16 text-primary-600" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">Signalement 311</h2>
-          <p className="mt-2 text-gray-600">Signalez et suivez les problèmes de votre ville</p>
+        <div className="flex flex-col items-center mb-8">
+          <Map className="h-10 w-10 text-primary-600 mb-3" />
+          <h1 className="text-2xl font-bold text-gray-900">Muno</h1>
+          <p className="mt-1 text-sm text-gray-500">Signalement citoyen</p>
         </div>
 
-        <Card>
+        <div>
           {/* Sélection de la méthode d'authentification */}
           <div className="flex gap-2 mb-6">
             <button
@@ -320,7 +318,7 @@ const Login = () => {
           <p className="mt-6 text-xs text-center text-gray-500">
             Vos données sont protégées et utilisées uniquement pour le service de signalement
           </p>
-        </Card>
+        </div>
 
         {/* Lien vers connexion admin */}
         <div className="mt-6 text-center">
