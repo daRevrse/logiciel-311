@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, Transition } from '@headlessui/react';
-import { LogOut, User, Bell, Settings, Map, List, Tag, Users as UsersIcon, Building2 } from 'lucide-react';
+import { LogOut, User, Bell, Settings, Map, List, Tag, Users as UsersIcon, Building2, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from './Button';
 
@@ -11,6 +11,7 @@ import Button from './Button';
 const Navbar = () => {
   const { user, isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -18,6 +19,7 @@ const Navbar = () => {
   };
 
   return (
+    <>
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
@@ -230,7 +232,36 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
+
+      {/* Bottom navigation — mobile uniquement, citoyen seulement */}
+      {isAuthenticated && !isAdmin() && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 safe-area-pb">
+          <div className="flex">
+            {[
+              { to: '/home',       label: 'Accueil',      Icon: Home },
+              { to: '/reports',    label: 'Signalements', Icon: List },
+              { to: '/my-reports', label: 'Mes rapports', Icon: User },
+            ].map(({ to, label, Icon }) => {
+              const active = location.pathname === to;
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`flex-1 flex flex-col items-center py-3 gap-1 text-xs font-medium transition-colors ${
+                    active ? 'text-primary-600' : 'text-gray-500 hover:text-primary-600'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+    </>
   );
+
 };
 
 export default Navbar;
