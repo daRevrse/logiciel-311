@@ -9,7 +9,8 @@ import {
   UserCheck,
   Filter,
   RefreshCw,
-  ThumbsUp
+  ThumbsUp,
+  CheckCircle
 } from 'lucide-react';
 import {
   Button,
@@ -49,6 +50,7 @@ const ManageReports = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [categories, setCategories] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('Tous');
 
   // Statistiques rapides
   const [stats, setStats] = useState({
@@ -191,326 +193,172 @@ const ManageReports = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Gestion des signalements
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Gérez et traitez tous les signalements de votre municipalité
-          </p>
+    <div className="flex gap-6 min-h-full">
+      {/* Colonne principale */}
+      <div className="flex-1 min-w-0">
+        {/* Barre de recherche + filtres secteur */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              name="search"
+              value={filters.search}
+              onChange={handleFilterChange}
+              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              placeholder="Rechercher des signalements..."
+              className="input-field pl-9 h-10 text-sm"
+            />
+          </div>
+          <button onClick={() => setShowFilters(!showFilters)} className="p-2 text-gray-400 hover:text-gray-600">
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <Card className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{pagination.totalReports || 0}</div>
-            <div className="text-xs text-gray-500">Total</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-            <div className="text-xs text-gray-500">En attente</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="text-2xl font-bold text-orange-600">{stats.in_progress}</div>
-            <div className="text-xs text-gray-500">En cours</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
-            <div className="text-xs text-gray-500">Résolus</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.rejected}</div>
-            <div className="text-xs text-gray-500">Rejetés</div>
-          </Card>
+        {/* Titre + filtre Tous / Mon Secteur */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Incidents Récents</h2>
+          <div className="flex gap-1 bg-gray-100 rounded-full p-1">
+            {['Tous', 'Mon Secteur'].map(f => (
+              <button key={f}
+                onClick={() => setSectorFilter(f)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  sectorFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                }`}>
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Barre de recherche et filtres */}
-        <Card className="mb-6">
-          <div className="flex flex-col gap-4">
-            {/* Ligne 1: Recherche */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    name="search"
-                    value={filters.search}
-                    onChange={handleFilterChange}
-                    placeholder="Rechercher par titre, description ou adresse..."
-                    className="input-field pl-10"
-                  />
-                </div>
-              </div>
+        {/* Liste signalements */}
+        {loading ? (
+          <div className="flex justify-center py-12"><Spinner size="lg" /></div>
+        ) : reports.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">Aucun signalement trouvé</div>
+        ) : (
+          <div className="space-y-3">
+            {reports.map(report => (
+              <div key={report.id}
+                className="bg-white rounded-[12px] shadow-card p-4 flex gap-4 hover:shadow-card-hover transition-shadow cursor-pointer"
+                onClick={() => handleReportClick(report.id)}>
+                {/* Thumbnail */}
+                {report.photos?.length > 0 ? (
+                  <img src={report.photos[0].photo_url} alt=""
+                    className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-8 w-8 text-gray-300" />
+                  </div>
+                )}
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Filtres
-                </Button>
-
-                <Button variant="primary" onClick={applyFilters}>
-                  <Filter className="h-4 w-4 mr-2" />
-                  Rechercher
-                </Button>
-
-                <Button variant="outline" onClick={() => loadReports()}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Filtres avancés */}
-            {showFilters && (
-              <div className="pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <Select
-                    label="Statut"
-                    name="status"
-                    value={filters.status}
-                    onChange={handleFilterChange}
-                    options={statusOptions}
-                  />
-
-                  <Select
-                    label="Catégorie"
-                    name="categoryId"
-                    value={filters.categoryId}
-                    onChange={handleFilterChange}
-                    options={categoryOptions}
-                  />
-
-                  <Select
-                    label="Trier par"
-                    name="sortBy"
-                    value={filters.sortBy}
-                    onChange={handleFilterChange}
-                    options={sortOptions}
-                  />
-
-                  <Select
-                    label="Ordre"
-                    name="sortOrder"
-                    value={filters.sortOrder}
-                    onChange={handleFilterChange}
-                    options={sortOrderOptions}
-                  />
-
-                  <div className="flex items-end">
-                    <Button variant="secondary" fullWidth onClick={resetFilters}>
-                      Réinitialiser
+                {/* Contenu */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="font-bold text-gray-900 text-base leading-tight">{report.title}</h3>
+                    <StatusBadge status={report.status} size="sm" />
+                  </div>
+                  <p className="text-sm text-gray-500 flex items-center gap-1 mb-3">
+                    <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                    {report.address}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-2xl font-bold text-primary-600">{report.supports_count || 0}</span>
+                      <span className="text-xs font-semibold text-gray-400 ml-1.5 tracking-wider">SOUTIENS</span>
+                    </div>
+                    <Button variant="primary" size="sm"
+                      onClick={e => { e.stopPropagation(); handleReportClick(report.id); }}>
+                      <CheckCircle className="h-4 w-4" />
+                      Traiter l'incident
                     </Button>
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
-        </Card>
+        )}
 
-        {/* Chips de filtre statut */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {['Tous', 'pending', 'confirmed', 'in_progress', 'resolved', 'rejected'].map(f => (
-            <button
-              key={f}
-              onClick={() => setStatusFilter(f === 'Tous' ? '' : f)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                (statusFilter === f || (f === 'Tous' && !statusFilter))
-                  ? 'bg-primary-600 text-white border-primary-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400'
-              }`}
-            >
-              {f === 'Tous' ? 'Tous' : f === 'pending' ? 'Nouveau' : f === 'confirmed' ? 'Confirmé' : f === 'in_progress' ? 'En cours' : f === 'resolved' ? 'Résolu' : 'Rejeté'}
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6">
+            <Button variant="secondary" size="sm"
+              onClick={() => changePage(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}>
+              Précédent
+            </Button>
+            <span className="text-sm text-gray-500">
+              Page {pagination.currentPage} / {pagination.totalPages}
+            </span>
+            <Button variant="secondary" size="sm"
+              onClick={() => changePage(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}>
+              Suivant
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Panneau droit */}
+      <div className="hidden xl:flex flex-col w-80 flex-shrink-0 gap-4">
+        {/* Carte */}
+        <div className="bg-white rounded-[12px] shadow-card overflow-hidden">
+          <div className="p-4 pb-2">
+            <div className="font-semibold text-gray-900 text-sm">Carte des Incidents</div>
+            <div className="text-xs text-gray-400">Mises à jour en direct</div>
+          </div>
+          <div className="h-48 bg-gray-100 relative">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+              Carte chargée en prod
+            </div>
+          </div>
+          <div className="p-3 text-right">
+            <button className="text-sm text-primary-600 font-medium hover:underline">
+              Agrandir la carte ↗
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Liste des signalements */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Spinner size="lg" />
+        {/* Statistiques mensuelles */}
+        <div className="bg-white rounded-[12px] shadow-card p-4">
+          <div className="text-xs font-semibold text-gray-400 tracking-widest uppercase mb-4">Statistiques Mensuelles</div>
+          <div className="mb-4">
+            <div className="text-xs text-gray-500 mb-1">Total des signalements</div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">{pagination.totalReports?.toLocaleString() || '0'}</span>
+              <span className="text-xs font-semibold text-support bg-emerald-50 px-1.5 py-0.5 rounded-full">+{stats.resolved > 0 ? Math.round(stats.resolved/Math.max(stats.total,1)*100) : 0}%</span>
+            </div>
           </div>
-        ) : reports.length === 0 ? (
-          <Card>
-            <div className="text-center py-12">
-              <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucun signalement trouvé
-              </h3>
-              <p className="text-gray-500">
-                Aucun signalement ne correspond à vos critères de recherche
-              </p>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-medium text-gray-600">EN COURS</span>
+                <span className="font-bold text-amber-600">{stats.in_progress}</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-400 rounded-full" style={{width: `${Math.min(100, stats.total > 0 ? (stats.in_progress/stats.total)*100 : 0)}%`}} />
+              </div>
             </div>
-          </Card>
-        ) : (
-          <>
-            {/* Résultats */}
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                {pagination.totalReports} signalement(s) trouvé(s)
-              </p>
-              <p className="text-sm text-gray-600">
-                Page {pagination.currentPage} sur {pagination.totalPages}
-              </p>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-medium text-gray-600">RÉSOLUS</span>
+                <span className="font-bold text-support">{stats.resolved}</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-support rounded-full" style={{width: `${Math.min(100, stats.total > 0 ? (stats.resolved/stats.total)*100 : 0)}%`}} />
+              </div>
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-4 mb-6">
-              {reports.map((report) => (
-                <Card
-                  key={report.id}
-                  hoverable
-                  onClick={() => handleReportClick(report.id)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    {/* Photo miniature */}
-                    {report.photos && report.photos.length > 0 ? (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={report.photos[0].photo_url}
-                          alt="Photo du signalement"
-                          className="w-full sm:w-32 h-32 object-cover rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-shrink-0 w-full sm:w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <MapPin className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-
-                    {/* Contenu */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              #{report.id} - {report.title}
-                            </h3>
-                            <StatusBadge status={report.status} size="sm" />
-                          </div>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {report.address}
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="text-gray-700 line-clamp-2 mb-3">
-                        {report.description}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(report.created_at)}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-support font-semibold">
-                          <ThumbsUp className="h-4 w-4" />{report.supports_count || 0}
-                        </span>
-                        {report.category && (
-                          <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                            {report.category.name}
-                          </span>
-                        )}
-                        {report.citizen && (
-                          <span className="text-xs">
-                            Par: {report.citizen.full_name || report.citizen.email}
-                          </span>
-                        )}
-                        <span className="ml-auto font-medium text-primary-600">
-                          Priorité: {report.priority_score?.toFixed(1) || '0.0'}
-                        </span>
-                      </div>
-
-                      {/* Actions admin */}
-                      <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReportClick(report.id);
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Voir détails
-                        </Button>
-                        {report.assigned_to && (
-                          <span className="text-sm text-gray-500 flex items-center">
-                            <UserCheck className="h-4 w-4 mr-1" />
-                            Assigné
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <Card>
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="secondary"
-                    onClick={() => changePage(pagination.currentPage - 1)}
-                    disabled={pagination.currentPage === 1}
-                  >
-                    Précédent
-                  </Button>
-
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                      .filter((page) => {
-                        return (
-                          page === 1 ||
-                          page === pagination.totalPages ||
-                          Math.abs(page - pagination.currentPage) <= 2
-                        );
-                      })
-                      .map((page, index, array) => {
-                        const showEllipsis = index > 0 && page - array[index - 1] > 1;
-
-                        return (
-                          <React.Fragment key={page}>
-                            {showEllipsis && <span className="text-gray-400">...</span>}
-                            <button
-                              onClick={() => changePage(page)}
-                              className={`px-3 py-1 rounded ${
-                                page === pagination.currentPage
-                                  ? 'bg-primary-600 text-white'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          </React.Fragment>
-                        );
-                      })}
-                  </div>
-
-                  <Button
-                    variant="secondary"
-                    onClick={() => changePage(pagination.currentPage + 1)}
-                    disabled={pagination.currentPage === pagination.totalPages}
-                  >
-                    Suivant
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </>
-        )}
+        {/* Console admin */}
+        <div className="bg-primary-600 rounded-[12px] p-5 text-white">
+          <h3 className="font-bold text-base mb-2">Console d'Administration</h3>
+          <p className="text-sm text-white/80 mb-4">Gérez les déploiements d'équipes et suivez la résolution des incidents prioritaires en temps réel.</p>
+          <button className="bg-white text-primary-700 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors w-full">
+            Gérer les équipes
+          </button>
+        </div>
       </div>
     </div>
   );
