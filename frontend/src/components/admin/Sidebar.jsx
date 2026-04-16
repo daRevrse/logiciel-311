@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, AlertCircle, Wrench, ShoppingBag,
-  Construction, FileText, Settings, X, MapPin,
+  Construction, FileText, Settings, X,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,8 +24,8 @@ const Sidebar = ({ mobileOpen, onClose }) => {
     <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 border-r-0 font-['Manrope'] text-sm tracking-tight">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center flex-shrink-0 shadow-sm border border-primary-500/20">
-          <MapPin className="h-6 w-6 text-white" />
+        <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-cover" />
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tighter text-slate-900 dark:text-slate-50 leading-tight">Muno</h1>

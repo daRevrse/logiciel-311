@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/common';
-import { Mail, Lock, AlertCircle, MapPin, ChevronRight, ShieldCheck, Globe } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ChevronRight, ShieldCheck, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /**
@@ -73,8 +73,8 @@ const AdminLogin = () => {
         <div className="relative z-10 flex flex-col justify-between p-16 w-full">
           <div>
             <div className="flex items-center gap-3 mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
-              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20 shadow-2xl">
-                <MapPin className="h-7 w-7 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden">
+                <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-cover" />
               </div>
               <div>
                 <h1 className="text-3xl font-black text-white tracking-tighter leading-none">Muno</h1>
@@ -117,8 +117,8 @@ const AdminLogin = () => {
         <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
           {/* Mobile Header (Only visible on small screens) */}
           <div className="lg:hidden flex flex-col items-center mb-10 text-center">
-            <div className="w-16 h-16 rounded-[2rem] bg-primary flex items-center justify-center shadow-2xl shadow-primary/30 mb-4">
-              <MapPin className="h-8 w-8 text-white" />
+            <div className="w-16 h-16 rounded-[2rem] bg-white flex items-center justify-center shadow-2xl shadow-primary/30 mb-4 overflow-hidden border border-slate-100">
+              <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-cover" />
             </div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Muno Admin</h1>
             <p className="text-slate-500 font-medium">Accès confidentiel réservé à la mairie</p>
