@@ -72,13 +72,13 @@ const AdminLogin = () => {
         {/* Content Overlay */}
         <div className="relative z-10 flex flex-col justify-between p-16 w-full">
           <div>
-            <div className="flex items-center gap-3 mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
-              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden">
-                <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-cover" />
+            <div className="flex items-center gap-4 mb-14 animate-in fade-in slide-in-from-left-4 duration-700">
+              <div className="w-20 h-20 rounded-[2.5rem] bg-white flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden p-3 transform transition-transform hover:scale-105">
+                <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-contain" />
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white tracking-tighter leading-none">Muno</h1>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-white/60 font-bold mt-1">Smart Government</p>
+                <h1 className="text-4xl font-black text-white tracking-tighter leading-none mb-1">Muno</h1>
+                <p className="text-[12px] uppercase tracking-[0.4em] text-white/60 font-bold">Gestion Municipale Intelligente</p>
               </div>
             </div>
 
@@ -117,10 +117,10 @@ const AdminLogin = () => {
         <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
           {/* Mobile Header (Only visible on small screens) */}
           <div className="lg:hidden flex flex-col items-center mb-10 text-center">
-            <div className="w-16 h-16 rounded-[2rem] bg-white flex items-center justify-center shadow-2xl shadow-primary/30 mb-4 overflow-hidden border border-slate-100">
-              <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-cover" />
+            <div className="w-24 h-24 rounded-[3rem] bg-white flex items-center justify-center shadow-2xl shadow-primary/20 mb-6 overflow-hidden border border-slate-100 p-4">
+              <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-contain" />
             </div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Muno Admin</h1>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-1">Muno Admin</h1>
             <p className="text-slate-500 font-medium">Accès confidentiel réservé à la mairie</p>
           </div>
 
