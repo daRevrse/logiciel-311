@@ -8,8 +8,8 @@ import {
   Eye,
   UserCheck,
   Filter,
-  Download,
-  RefreshCw
+  RefreshCw,
+  ThumbsUp
 } from 'lucide-react';
 import {
   Button,
@@ -48,6 +48,7 @@ const ManageReports = () => {
 
   const [showFilters, setShowFilters] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Statistiques rapides
   const [stats, setStats] = useState({
@@ -316,6 +317,23 @@ const ManageReports = () => {
           </div>
         </Card>
 
+        {/* Chips de filtre statut */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {['Tous', 'pending', 'confirmed', 'in_progress', 'resolved', 'rejected'].map(f => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f === 'Tous' ? '' : f)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                (statusFilter === f || (f === 'Tous' && !statusFilter))
+                  ? 'bg-primary-600 text-white border-primary-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400'
+              }`}
+            >
+              {f === 'Tous' ? 'Tous' : f === 'pending' ? 'Nouveau' : f === 'confirmed' ? 'Confirmé' : f === 'in_progress' ? 'En cours' : f === 'resolved' ? 'Résolu' : 'Rejeté'}
+            </button>
+          ))}
+        </div>
+
         {/* Liste des signalements */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -377,7 +395,7 @@ const ManageReports = () => {
                             <h3 className="text-lg font-semibold text-gray-900">
                               #{report.id} - {report.title}
                             </h3>
-                            <StatusBadge status={report.status} />
+                            <StatusBadge status={report.status} size="sm" />
                           </div>
                           <p className="text-sm text-gray-600 flex items-center">
                             <MapPin className="h-4 w-4 mr-1" />
@@ -395,7 +413,9 @@ const ManageReports = () => {
                           <Calendar className="h-4 w-4 mr-1" />
                           {formatDate(report.created_at)}
                         </span>
-                        <span>{report.supports_count || 0} appuis</span>
+                        <span className="inline-flex items-center gap-1 text-support font-semibold">
+                          <ThumbsUp className="h-4 w-4" />{report.supports_count || 0}
+                        </span>
                         {report.category && (
                           <span className="px-2 py-1 bg-gray-100 rounded text-xs">
                             {report.category.name}
