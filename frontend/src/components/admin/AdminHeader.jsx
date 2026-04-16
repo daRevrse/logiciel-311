@@ -15,14 +15,14 @@ const AdminHeader = ({ title, onMenuClick }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex justify-between items-center px-4 lg:px-8 w-full h-16 bg-white/80 backdrop-blur-md shadow-sm">
-      {/* Gauche : menu mobile + titre + search */}
+    <header className="sticky top-0 z-30 flex justify-between items-center px-4 lg:px-8 w-full h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm dark:shadow-none font-['Manrope']">
+      {/* Left: mobile menu + title + search */}
       <div className="flex items-center gap-4 lg:gap-8 flex-1 min-w-0">
-        <button onClick={onMenuClick} className="lg:hidden text-slate-500 hover:text-slate-700 flex-shrink-0">
+        <button onClick={onMenuClick} className="lg:hidden text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors flex-shrink-0">
           <MenuIcon className="h-6 w-6" />
         </button>
 
-        <h2 className="text-xl font-bold text-slate-900 font-['Manrope'] whitespace-nowrap flex-shrink-0">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 font-headline whitespace-nowrap flex-shrink-0">
           {title}
         </h2>
 
@@ -33,26 +33,30 @@ const AdminHeader = ({ title, onMenuClick }) => {
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
             placeholder="Rechercher des signalements..."
-            className="w-full bg-gray-100 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary-600/30 outline-none transition-all"
+            className="w-full bg-surface-container-low dark:bg-slate-900/50 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           />
         </div>
       </div>
 
-      {/* Droite : filtre + séparateur + profil */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <button className="p-2 hover:bg-slate-50 rounded-full transition-all active:scale-95">
-          <SlidersHorizontal className="h-5 w-5 text-slate-600" />
+      {/* Right: filter + divider + profile */}
+      <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
+        <button className="p-2 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-full transition-all active:scale-95 text-slate-600 dark:text-slate-400">
+          <SlidersHorizontal className="h-5 w-5" />
         </button>
-
-        <div className="h-8 w-px bg-gray-200" />
+        
+        <div className="h-8 w-[1px] bg-outline-variant/30" />
 
         <Menu as="div" className="relative">
-          <Menu.Button className="flex items-center gap-3 pl-2 focus:outline-none">
-            <span className="text-sm font-semibold text-slate-700 hidden sm:block">
+          <Menu.Button className="flex items-center gap-3 pl-2 focus:outline-none group">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 hidden md:block group-hover:text-primary transition-colors">
               {user?.full_name || user?.email || 'Administrateur'}
             </span>
-            <div className="w-8 h-8 rounded-full bg-primary-100 border-2 border-white shadow-sm flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-600" />
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border-2 border-white dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User className="h-4 w-4 text-slate-400" />
+              )}
             </div>
           </Menu.Button>
 
@@ -65,21 +69,21 @@ const AdminHeader = ({ title, onMenuClick }) => {
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-10">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.full_name || user?.email}
+            <Menu.Items className="absolute right-0 mt-2 w-52 origin-top-right rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-black/5 focus:outline-none z-10 p-1">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-800">
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
+                  {user?.full_name || 'Admin'}
                 </p>
-                {user?.email && user?.full_name && (
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                )}
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold truncate">
+                  {user?.role || 'Gestionnaire'}
+                </p>
               </div>
               <div className="py-1">
                 <Menu.Item>
                   {({ active }) => (
                     <button
                       onClick={handleLogout}
-                      className={`flex items-center w-full px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-50' : ''}`}
+                      className={`flex items-center w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${active ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'text-red-500'}`}
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Déconnexion
@@ -96,3 +100,4 @@ const AdminHeader = ({ title, onMenuClick }) => {
 };
 
 export default AdminHeader;
+

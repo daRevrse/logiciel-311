@@ -20,9 +20,19 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
+    const { status, config } = error.response || {};
+    const isLoginPage = window.location.pathname.includes('/login');
+    const isAdminPath = window.location.pathname.startsWith('/admin');
+
+    if (status === 401 && !isLoginPage) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem('user');
+      
+      if (isAdminPath) {
+        window.location.href = '/admin/login';
+      } else {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

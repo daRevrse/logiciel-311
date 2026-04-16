@@ -25,10 +25,18 @@ import ManageMunicipalities from './pages/admin/ManageMunicipalities';
 
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false }) => {
   const { isAuthenticated, isAdmin, isSuperAdmin, loading } = useAuth();
+  const location = useLocation();
+
   if (loading) return <LoadingScreen />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  if (!isAuthenticated) {
+    const isByPassingAdminPath = location.pathname.startsWith('/admin');
+    return <Navigate to={isByPassingAdminPath ? "/admin/login" : "/login"} replace state={{ from: location }} />;
+  }
+
   if (superAdminOnly && !isSuperAdmin()) return <Navigate to="/" replace />;
   if (adminOnly && !isAdmin()) return <Navigate to="/" replace />;
+
   return children;
 };
 
@@ -63,11 +71,15 @@ const AdminLayout = ({ children }) => {
   )?.[1] || 'Admin';
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-      <div className="lg:pl-60 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
         <AdminHeader title={title} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

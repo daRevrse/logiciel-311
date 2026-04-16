@@ -21,17 +21,17 @@ const Sidebar = ({ mobileOpen, onClose }) => {
   const { user } = useAuth();
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-slate-100 font-['Manrope'] text-sm tracking-tight">
+    <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 border-r-0 font-['Manrope'] text-sm tracking-tight">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center flex-shrink-0">
-          <MapPin className="h-5 w-5 text-white" />
+        <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center flex-shrink-0 shadow-sm border border-primary-500/20">
+          <MapPin className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-bold tracking-tighter text-slate-900 leading-tight">Muno</h1>
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 leading-tight">Gestion Municipale</p>
+          <h1 className="text-2xl font-bold tracking-tighter text-slate-900 dark:text-slate-50 leading-tight">Muno</h1>
+          <p className="text-[10px] uppercase tracking-widest text-slate-500 leading-tight font-semibold">Gestion Municipale</p>
         </div>
-        <button onClick={onClose} className="ml-auto text-slate-400 hover:text-slate-600 lg:hidden">
+        <button onClick={onClose} className="ml-auto text-slate-400 hover:text-slate-600 lg:hidden p-1 rounded-md hover:bg-slate-200 transition-colors">
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -45,26 +45,26 @@ const Sidebar = ({ mobileOpen, onClose }) => {
               key={to}
               to={to}
               onClick={onClose}
-              className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+              className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
                 active
-                  ? 'rounded-none border-l-4 border-primary-600 bg-primary-600/5 text-primary-600 font-bold'
-                  : 'rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200'
+                  ? 'rounded-none border-l-4 border-primary text-primary font-bold bg-primary/5'
+                  : 'rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
             >
-              <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+              <Icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-primary' : ''}`} />
               <span>{label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Support Hero */}
+      {/* Support Hero - Bottom section from screen.html */}
       <div className="p-6 mt-auto">
-        <div className="bg-white p-4 rounded-xl shadow-sm">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-tighter mb-2">Support Hero</p>
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2">Support Hero</p>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#008851]"></div>
-            <span className="text-xs font-medium text-slate-700">
+            <div className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></div>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
               {user?.municipality?.name || 'Secteur B4'}
             </span>
           </div>
@@ -76,15 +76,15 @@ const Sidebar = ({ mobileOpen, onClose }) => {
   return (
     <>
       {/* Desktop sidebar — w-64 */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-slate-100 z-40">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-slate-100 dark:bg-slate-900 z-40 transform transition-transform duration-300">
         <SidebarContent />
       </aside>
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-          <aside className="relative flex flex-col w-64 h-full bg-slate-100 z-50">
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+          <aside className="relative flex flex-col w-64 h-full bg-slate-100 dark:bg-slate-900 shadow-2xl transition-transform duration-300">
             <SidebarContent />
           </aside>
         </div>
@@ -94,3 +94,4 @@ const Sidebar = ({ mobileOpen, onClose }) => {
 };
 
 export default Sidebar;
+

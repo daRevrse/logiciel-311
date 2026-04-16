@@ -40,7 +40,9 @@
       "Bash(npx sequelize-cli:*)",
       "Bash(timeout 5 node:*)",
       "Bash(node server.js:*)",
-      "Bash(timeout 3 node:*)"
+      "Bash(timeout 3 node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

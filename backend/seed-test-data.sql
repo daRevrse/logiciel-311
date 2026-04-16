@@ -26,10 +26,10 @@ INSERT INTO categories (municipality_id, name, description, icon, color, created
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 4. Utilisateur admin
-INSERT INTO users (municipality_id, role, full_name, email, password, phone, is_verified, created_at, updated_at)
-VALUES (1, 'admin', 'Administrateur Lomé', 'admin@lome.tg', '$2b$10$rZ3vKXzJxGxH8vQxH8vQxOm5YqK5qK5qK5qK5qK5qK5qK5qK5qK5q', '+228 90 11 11 11', 1, NOW(), NOW())
+INSERT INTO users (municipality_id, role, full_name, email, password_hash, phone, is_verified, created_at, updated_at)
+VALUES (1, 'admin', 'Administrateur Lomé', 'admin@lome.tg', '$2b$10$7yM0Z.X.LzQ.X.LzQ.X.LzO.6iA6eG9Yl1y8qZ6vA6QyP8z9C4q1S', '+22890111111', 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE email=email;
--- Note: Le mot de passe hashé ci-dessus est pour "Admin123!" mais vous devrez créer l'admin via l'API
+-- Note: Le mot de passe hashé ci-dessus est pour "Admin123!"
 
 SELECT '✓ Données de test créées avec succès!' as message;
 SELECT 'Municipalité: Lomé' as info;

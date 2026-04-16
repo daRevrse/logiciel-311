@@ -251,7 +251,10 @@ class AuthService {
       }
 
       // Vérifier le mot de passe
+      console.log(`[AUTH DEBUG] Tentative pour: ${user.email}`);
       const isPasswordValid = await user.comparePassword(password);
+      console.log(`[AUTH DEBUG] Résultat comparaison: ${isPasswordValid}`);
+      
       if (!isPasswordValid) {
         throw new Error('Email ou mot de passe invalide');
       }
