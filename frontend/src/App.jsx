@@ -48,7 +48,7 @@ const CitizenLayout = ({ children }) => (
 // Mapping titre pages admin
 const adminTitles = {
   '/admin/dashboard':      'Tableau de bord',
-  '/admin/reports':        'Signalements',
+  '/admin/reports':        'Signalements Citoyens',
   '/admin/categories':     'Catégories',
   '/admin/users':          'Utilisateurs',
   '/admin/municipalities': 'Municipalités',
