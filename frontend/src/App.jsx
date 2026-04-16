@@ -1,8 +1,10 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Navbar, LoadingScreen } from './components/common';
+import Sidebar from './components/admin/Sidebar';
+import AdminHeader from './components/admin/AdminHeader';
 
 // Pages citoyennes
 import Login from './pages/citizen/Login';
@@ -21,59 +23,56 @@ import ManageCategories from './pages/admin/ManageCategories';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageMunicipalities from './pages/admin/ManageMunicipalities';
 
-/**
- * Composant de route protégée
- */
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false }) => {
   const { isAuthenticated, isAdmin, isSuperAdmin, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (superAdminOnly && !isSuperAdmin()) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (adminOnly && !isAdmin()) {
-    return <Navigate to="/" replace />;
-  }
-
+  if (loading) return <LoadingScreen />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (superAdminOnly && !isSuperAdmin()) return <Navigate to="/" replace />;
+  if (adminOnly && !isAdmin()) return <Navigate to="/" replace />;
   return children;
 };
 
-/**
- * Redirection basée sur le rôle
- */
 const RoleBasedRedirect = () => {
   const { isAdmin } = useAuth();
-
-  if (isAdmin()) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  return <Navigate to="/home" replace />;
+  return isAdmin() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />;
 };
 
-/**
- * Layout avec Navbar
- */
-const Layout = ({ children }) => {
+// Layout citoyen : top navbar + contenu
+const CitizenLayout = ({ children }) => (
+  <div className="min-h-screen bg-surface">
+    <Navbar />
+    <main className="pb-20 lg:pb-0">{children}</main>
+  </div>
+);
+
+// Mapping titre pages admin
+const adminTitles = {
+  '/admin/dashboard':      'Tableau de bord',
+  '/admin/reports':        'Signalements',
+  '/admin/categories':     'Catégories',
+  '/admin/users':          'Utilisateurs',
+  '/admin/municipalities': 'Municipalités',
+};
+
+// Layout admin : sidebar fixe + header
+const AdminLayout = ({ children }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+  const title = Object.entries(adminTitles).find(([path]) =>
+    location.pathname.startsWith(path)
+  )?.[1] || 'Admin';
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      {children}
+    <div className="min-h-screen bg-surface">
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <div className="lg:pl-60 flex flex-col min-h-screen">
+        <AdminHeader title={title} onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 p-4 lg:p-6">{children}</main>
+      </div>
     </div>
   );
 };
 
-/**
- * Composant principal de l'application
- */
 function App() {
   return (
     <Router>
@@ -82,166 +81,33 @@ function App() {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
-            },
+            style: { background: '#1E3A5F', color: '#fff' },
+            success: { iconTheme: { primary: '#2BB673', secondary: '#fff' } },
+            error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
           }}
         />
 
         <Routes>
-          {/* Route publique de connexion citoyenne */}
-          <Route path="/login" element={<Login />} />
-
-          {/* Route publique de connexion admin */}
+          <Route path="/login"       element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Route racine - redirige selon le rôle */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <RoleBasedRedirect />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
 
-          {/* Routes citoyennes protégées */}
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Home />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Routes citoyennes */}
+          <Route path="/home"           element={<ProtectedRoute><CitizenLayout><Home /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports"        element={<ProtectedRoute><CitizenLayout><ReportsList /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/my-reports"     element={<ProtectedRoute><CitizenLayout><MyReports /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports/create" element={<ProtectedRoute><CitizenLayout><CreateReport /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports/:id"    element={<ProtectedRoute><CitizenLayout><ReportDetail /></CitizenLayout></ProtectedRoute>} />
 
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ReportsList />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Routes admin */}
+          <Route path="/admin/dashboard"      element={<ProtectedRoute adminOnly><AdminLayout><Dashboard /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/reports"        element={<ProtectedRoute adminOnly><AdminLayout><ManageReports /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/reports/:id"    element={<ProtectedRoute adminOnly><AdminLayout><ReportDetailAdmin /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/categories"     element={<ProtectedRoute adminOnly><AdminLayout><ManageCategories /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/users"          element={<ProtectedRoute adminOnly><AdminLayout><ManageUsers /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/municipalities" element={<ProtectedRoute superAdminOnly><AdminLayout><ManageMunicipalities /></AdminLayout></ProtectedRoute>} />
 
-          <Route
-            path="/my-reports"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <MyReports />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/reports/create"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <CreateReport />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/reports/:id"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ReportDetail />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Routes admin protégées */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/reports"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <ManageReports />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/reports/:id"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <ReportDetailAdmin />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/categories"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <ManageCategories />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <ManageUsers />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/municipalities"
-            element={
-              <ProtectedRoute superAdminOnly>
-                <Layout>
-                  <ManageMunicipalities />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Route par défaut - redirection */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
