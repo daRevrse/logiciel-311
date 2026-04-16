@@ -13,7 +13,7 @@ const Card = ({
   onClick,
   hoverable = false
 }) => {
-  const hoverClass = hoverable ? 'hover:shadow-lg transition-shadow cursor-pointer' : '';
+  const hoverClass = hoverable ? 'hover:shadow-card-hover transition-shadow cursor-pointer' : '';
   const paddingClass = noPadding ? '' : 'p-6';
 
   return (
