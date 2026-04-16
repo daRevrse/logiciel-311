@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, MapPin, Calendar } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, Calendar, ThumbsUp } from "lucide-react";
 import { useReports } from "../../hooks/useReports";
 import {
   Button,
@@ -31,6 +31,7 @@ const ReportsList = () => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   useEffect(() => {
     loadReports(filters);
@@ -61,6 +62,10 @@ const ReportsList = () => {
 
   const handleReportClick = (reportId) => {
     navigate(`/reports/${reportId}`);
+  };
+
+  const handleSupport = (reportId) => {
+    // support action - logique existante à brancher si nécessaire
   };
 
   const formatDate = (dateString) => {
@@ -95,7 +100,7 @@ const ReportsList = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-surface py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -179,6 +184,21 @@ const ReportsList = () => {
           )}
         </Card>
 
+        {/* Chips de filtre catégorie */}
+        <div className="flex flex-wrap gap-2 mb-4 px-4 pt-4">
+          {['Tous', 'Voirie', 'Éclairage', 'Eau', 'Déchets', 'Autre'].map(cat => (
+            <button key={cat}
+              onClick={() => setCategoryFilter(cat === 'Tous' ? '' : cat)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                (categoryFilter === cat || (cat === 'Tous' && !categoryFilter))
+                  ? 'bg-primary-600 text-white border-primary-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-primary-400'
+              }`}>
+              {cat}
+            </button>
+          ))}
+        </div>
+
         {/* Liste des signalements */}
         {loading ? (
           <div className="flex justify-center py-12">
@@ -214,67 +234,23 @@ const ReportsList = () => {
               </p>
             </div>
 
-            <div className="space-y-4 mb-6">
+            <div className="mb-6">
               {reports.map((report) => (
-                <Card
-                  key={report.id}
-                  hoverable
-                  onClick={() => handleReportClick(report.id)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    {/* Photo miniature */}
-                    {report.photos && report.photos.length > 0 ? (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={report.photos[0].photo_url}
-                          alt="Photo du signalement"
-                          className="w-full sm:w-32 h-32 object-cover rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-shrink-0 w-full sm:w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <MapPin className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-
-                    {/* Contenu */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            {report.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {report.address}
-                          </p>
-                        </div>
-                        <StatusBadge status={report.status} />
-                      </div>
-
-                      <p className="text-gray-700 line-clamp-2 mb-3">
-                        {report.description}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(report.created_at)}
-                        </span>
-                        <span>{report.supports_count || 0} appuis</span>
-                        {report.category && (
-                          <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                            {report.category.name}
-                          </span>
-                        )}
-                        <span className="ml-auto font-medium text-primary-600">
-                          Priorité: {report.priority_score?.toFixed(1) || "0.0"}
-                        </span>
-                      </div>
-                    </div>
+                <div key={report.id} className="card-hover mb-3 mx-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-gray-900 cursor-pointer" onClick={() => handleReportClick(report.id)}>{report.title}</h3>
+                    <StatusBadge status={report.status} size="sm" />
                   </div>
-                </Card>
+                  <p className="text-sm text-muted mb-3">{report.address}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 text-support font-semibold">
+                      <ThumbsUp className="h-4 w-4" />{report.supports_count || 0}
+                    </span>
+                    <Button variant="support" size="sm" onClick={() => handleSupport(report.id)}>
+                      Appuyer
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
 
