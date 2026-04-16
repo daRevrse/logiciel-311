@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 }
@@ -11,22 +11,55 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: #F5F7FA;
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium;
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+    @apply border-2 border-primary-600 text-primary-600 bg-white px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors font-medium;
+  }
+
+  .btn-support {
+    @apply bg-support text-white px-4 py-2 rounded-lg hover:bg-support-dark transition-colors font-medium flex items-center gap-2;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none;
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-shadow;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    @apply bg-white rounded-[12px] shadow-card p-6;
+  }
+
+  .card-hover {
+    @apply bg-white rounded-[12px] shadow-card p-6 hover:shadow-card-hover transition-shadow cursor-pointer;
+  }
+
+  .badge {
+    @apply inline-flex items-center font-medium rounded-full border text-sm px-2.5 py-1;
+  }
+
+  .badge-new {
+    @apply badge bg-blue-50 text-primary-700 border-primary-200;
+  }
+
+  .badge-inprogress {
+    @apply badge bg-amber-50 text-amber-700 border-amber-200;
+  }
+
+  .badge-resolved {
+    @apply badge bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+
+  .badge-rejected {
+    @apply badge bg-red-50 text-red-700 border-red-200;
+  }
+
+  .badge-confirmed {
+    @apply badge bg-primary-50 text-primary-800 border-primary-300;
   }
 }
