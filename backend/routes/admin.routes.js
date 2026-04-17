@@ -409,14 +409,27 @@ router.delete(
 // ROUTES SETTINGS MUNICIPALITÉ (ADMIN SCOPE)
 // ============================================
 
-const { logoUpload, bannerUpload } = require('../middlewares/uploadMunicipalityImage');
+const { logoUpload, bannerUpload, handleMulterErrors } = require('../middlewares/uploadMunicipalityImage');
+
+/**
+ * Guard : les routes de settings municipalité (scope admin) requièrent un
+ * municipalityId. Un super_admin sans rattachement doit passer par les
+ * routes /municipalities/:id dédiées.
+ */
+function requireMunicipalityScope(req, res, next) {
+  if (!req.municipalityId) {
+    return res.status(400).json({
+      success: false,
+      message: 'Super-admins doivent utiliser les routes /municipalities/:id'
+    });
+  }
+  next();
+}
 
 /**
  * Validation des settings municipalité (tous champs optionnels en PATCH).
  */
 const validateMunicipalitySettings = [
-  body('logo_url').optional().isString().isLength({ max: 500 }).withMessage('logo_url trop long'),
-  body('banner_url').optional().isString().isLength({ max: 500 }).withMessage('banner_url trop long'),
   body('primary_color')
     .optional()
     .matches(/^#[0-9A-Fa-f]{6}$/)
@@ -443,6 +456,7 @@ router.get(
   '/municipality/settings',
   authenticateToken,
   requireAdmin,
+  requireMunicipalityScope,
   validateLicense,
   adminController.getMunicipalitySettings
 );
@@ -456,6 +470,7 @@ router.patch(
   '/municipality/settings',
   authenticateToken,
   requireAdmin,
+  requireMunicipalityScope,
   validateLicense,
   logActivity('update_municipality_settings'),
   validateMunicipalitySettings,
@@ -471,9 +486,10 @@ router.post(
   '/municipality/upload-logo',
   authenticateToken,
   requireAdmin,
+  requireMunicipalityScope,
   validateLicense,
   logActivity('upload_municipality_logo'),
-  logoUpload.single('logo'),
+  handleMulterErrors(logoUpload.single('logo')),
   adminController.uploadLogo
 );
 
@@ -486,9 +502,10 @@ router.post(
   '/municipality/upload-banner',
   authenticateToken,
   requireAdmin,
+  requireMunicipalityScope,
   validateLicense,
   logActivity('upload_municipality_banner'),
-  bannerUpload.single('banner'),
+  handleMulterErrors(bannerUpload.single('banner')),
   adminController.uploadBanner
 );
 

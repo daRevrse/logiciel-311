@@ -17,17 +17,37 @@ const fs = require('fs');
 
 const ALLOWED_MIMETYPES = [
   'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/svg+xml'
+  'image/jpeg'
 ];
 
 const EXT_BY_MIMETYPE = {
   'image/png': '.png',
-  'image/jpeg': '.jpg',
-  'image/jpg': '.jpg',
-  'image/svg+xml': '.svg'
+  'image/jpeg': '.jpg'
 };
+
+/**
+ * Wrap a multer middleware to normalize error responses.
+ * - multer.MulterError -> 400 { success:false, code, message }
+ * - other errors       -> 400 { success:false, message }
+ */
+function handleMulterErrors(mw) {
+  return (req, res, next) => {
+    mw(req, res, (err) => {
+      if (!err) return next();
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({
+          success: false,
+          code: err.code,
+          message: err.message
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    });
+  };
+}
 
 function buildStorage(baseFilename) {
   return multer.diskStorage({
@@ -83,5 +103,6 @@ const bannerUpload = multer({
 module.exports = {
   logoUpload,
   bannerUpload,
-  ALLOWED_MIMETYPES
+  ALLOWED_MIMETYPES,
+  handleMulterErrors
 };

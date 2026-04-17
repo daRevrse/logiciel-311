@@ -31,8 +31,6 @@ const fs = require('fs');
  * Champs autorisés pour la mise à jour des settings municipalité (admin)
  */
 const MUNICIPALITY_SETTINGS_FIELDS = [
-  'logo_url',
-  'banner_url',
   'primary_color',
   'secondary_color',
   'display_name',
