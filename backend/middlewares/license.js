@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { License, Municipality } = require('../models');
 const logger = require('../utils/logger');
 
@@ -182,7 +183,7 @@ const checkAdminLimit = async (req, res, next) => {
     const activeAdmins = await User.count({
       where: {
         municipality_id: municipalityId,
-        role: ['admin', 'super_admin'],
+        role: { [Op.in]: ['admin', 'super_admin'] },
         is_active: true
       }
     });

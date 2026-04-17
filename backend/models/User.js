@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     municipality_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       field: 'municipality_id',
       references: {
         model: 'municipalities',

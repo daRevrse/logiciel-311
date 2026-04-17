@@ -323,11 +323,18 @@ class LicenseService {
 
       logger.info(`${expiringLicenses.length} licence(s) expire(nt) dans les 30 prochains jours`);
 
-      // TODO: Envoyer des emails d'alerte
+      const mailService = require('./mailService');
       for (const license of expiringLicenses) {
         const daysRemaining = license.daysRemaining();
         logger.warn(`Licence ${license.license_key} expire dans ${daysRemaining} jours`);
-        // Implémenter l'envoi d'email ici
+
+        const expiresStr = new Date(license.expires_at).toLocaleDateString('fr-FR');
+        await mailService.sendMail({
+          to: license.contact_email,
+          subject: `[Muno] Votre licence expire dans ${daysRemaining} jour(s)`,
+          text: `Bonjour,\n\nVotre licence ${license.license_key} pour ${license.municipality_name} expire le ${expiresStr} (dans ${daysRemaining} jour(s)).\nMerci de contacter l'équipe Muno pour la renouveler.\n`,
+          html: `<p>Bonjour,</p><p>Votre licence <strong>${license.license_key}</strong> pour <strong>${license.municipality_name}</strong> expire le <strong>${expiresStr}</strong> (dans ${daysRemaining} jour(s)).</p><p>Merci de contacter l'équipe Muno pour la renouveler.</p>`
+        });
       }
 
       return expiringLicenses;

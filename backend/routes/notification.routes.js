@@ -13,7 +13,7 @@ const { body, param, query } = require('express-validator');
 
 // Middlewares
 const { authenticateToken } = require('../middlewares/auth');
-const { validateLicense } = require('../middlewares/license');
+const { validateLicense, requireFeature } = require('../middlewares/license');
 const { logActivity } = require('../middlewares/requestLogger');
 
 // Contrôleur
@@ -178,6 +178,7 @@ router.post(
   '/test',
   authenticateToken,
   validateLicense,
+  requireFeature('notifications'),
   logActivity('send_test_notification'),
   validateTestNotification,
   notificationController.sendTestNotification

@@ -22,6 +22,8 @@ import ReportDetailAdmin from './pages/admin/ReportDetailAdmin';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageMunicipalities from './pages/admin/ManageMunicipalities';
+import ManageLicenses from './pages/admin/ManageLicenses';
+import ManageSuperAdmins from './pages/admin/ManageSuperAdmins';
 
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false }) => {
   const { isAuthenticated, isAdmin, isSuperAdmin, loading } = useAuth();
@@ -60,6 +62,8 @@ const adminTitles = {
   '/admin/categories':     'Catégories',
   '/admin/users':          'Utilisateurs',
   '/admin/municipalities': 'Municipalités',
+  '/admin/licenses':       'Licences',
+  '/admin/super-admins':   'Super administrateurs',
 };
 
 // Layout admin : sidebar fixe + header
@@ -119,6 +123,8 @@ function App() {
           <Route path="/admin/categories"     element={<ProtectedRoute adminOnly><AdminLayout><ManageCategories /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/users"          element={<ProtectedRoute adminOnly><AdminLayout><ManageUsers /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/municipalities" element={<ProtectedRoute superAdminOnly><AdminLayout><ManageMunicipalities /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/licenses"       element={<ProtectedRoute superAdminOnly><AdminLayout><ManageLicenses /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/super-admins"   element={<ProtectedRoute superAdminOnly><AdminLayout><ManageSuperAdmins /></AdminLayout></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

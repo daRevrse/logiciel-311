@@ -14,7 +14,7 @@ const { param, query } = require('express-validator');
 
 // Middlewares
 const { authenticateToken } = require('../middlewares/auth');
-const { validateLicense } = require('../middlewares/license');
+const { validateLicense, requireFeature } = require('../middlewares/license');
 const { logActivity } = require('../middlewares/requestLogger');
 const { supportLimiter } = require('../middlewares/rateLimiter');
 
@@ -68,6 +68,7 @@ router.post(
   '/reports/:id/support',
   authenticateToken,
   validateLicense,
+  requireFeature('support'),
   supportLimiter,
   logActivity('add_support'),
   validateReportId,
@@ -84,6 +85,7 @@ router.delete(
   '/reports/:id/support',
   authenticateToken,
   validateLicense,
+  requireFeature('support'),
   supportLimiter,
   logActivity('remove_support'),
   validateReportId,

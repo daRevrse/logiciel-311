@@ -277,6 +277,66 @@ const adminService = {
   async createMunicipalityLicense(municipalityId, licenseData) {
     const response = await api.post(`/admin/municipalities/${municipalityId}/license`, licenseData);
     return response.data;
+  },
+
+  // ============================================
+  // CATALOGUE DES MODULES
+  // ============================================
+
+  async getModulesCatalog() {
+    const response = await api.get('/admin/modules/catalog');
+    return response.data;
+  },
+
+  // ============================================
+  // GESTION DES LICENCES (SUPER ADMIN)
+  // ============================================
+
+  async listLicenses(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.q) params.append('q', filters.q);
+    const response = await api.get(`/admin/licenses?${params.toString()}`);
+    return response.data;
+  },
+
+  async getLicense(id) {
+    const response = await api.get(`/admin/licenses/${id}`);
+    return response.data;
+  },
+
+  async updateLicenseModules(id, modules) {
+    const response = await api.patch(`/admin/licenses/${id}/modules`, { modules });
+    return response.data;
+  },
+
+  async renewLicense(id, years = 1) {
+    const response = await api.post(`/admin/licenses/${id}/renew`, { years });
+    return response.data;
+  },
+
+  async deactivateLicense(id) {
+    const response = await api.patch(`/admin/licenses/${id}/deactivate`);
+    return response.data;
+  },
+
+  async activateLicense(id) {
+    const response = await api.patch(`/admin/licenses/${id}/activate`);
+    return response.data;
+  },
+
+  // ============================================
+  // GESTION DES SUPER ADMINS
+  // ============================================
+
+  async listSuperAdmins() {
+    const response = await api.get('/admin/super-admins');
+    return response.data;
+  },
+
+  async createSuperAdmin(data) {
+    const response = await api.post('/admin/super-admins', data);
+    return response.data;
   }
 };
 

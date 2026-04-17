@@ -790,8 +790,13 @@ exports.getMunicipalities = async (req, res) => {
  * @param {Response} res - Réponse Express
  */
 exports.createMunicipality = async (req, res) => {
+  const crypto = require('crypto');
+  const bcrypt = require('bcrypt');
+  const { sequelize, Municipality, License, User } = require('../models');
+  const { sanitizeFeatures } = require('../config/modules');
+  const mailService = require('../services/mailService');
+
   try {
-    // Validation
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -801,7 +806,6 @@ exports.createMunicipality = async (req, res) => {
       });
     }
 
-    const { Municipality, License } = require('../models');
     const {
       name,
       region,
@@ -810,60 +814,132 @@ exports.createMunicipality = async (req, res) => {
       contact_phone,
       address,
       is_active,
-      license_duration_years
+      license_duration_years,
+      max_users,
+      max_admins,
+      modules,
+      admin_user
     } = req.body;
 
-    // Créer la licence d'abord
+    if (!admin_user || !admin_user.email || !admin_user.full_name || !admin_user.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Les informations du premier administrateur (full_name, email, phone) sont requises'
+      });
+    }
+
+    const existing = await User.findOne({ where: { email: admin_user.email } });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: `Un utilisateur avec l'email ${admin_user.email} existe déjà`
+      });
+    }
+
     const licenseYears = license_duration_years || 1;
     const issuedAt = new Date();
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + licenseYears);
 
-    const license = await License.create({
-      municipality_name: name,
-      contact_email,
-      contact_phone,
-      issued_at: issuedAt,
-      expires_at: expiresAt,
-      max_users: 1000,
-      max_admins: 50,
-      is_active: true,
-      features: {
-        notifications: true,
-        map: true,
-        statistics: true,
-        export: true
-      }
+    const features = sanitizeFeatures(modules || {});
+
+    const tempPassword = crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 12);
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    let licenseKey;
+    for (let i = 0; i < 5; i++) {
+      const candidate = License.generateKey();
+      const found = await License.findOne({ where: { license_key: candidate } });
+      if (!found) { licenseKey = candidate; break; }
+    }
+
+    const result = await sequelize.transaction(async (t) => {
+      const license = await License.create({
+        license_key: licenseKey,
+        municipality_name: name,
+        contact_email,
+        contact_phone,
+        issued_at: issuedAt,
+        expires_at: expiresAt,
+        max_users: max_users || 1000,
+        max_admins: max_admins || 50,
+        is_active: true,
+        features
+      }, { transaction: t });
+
+      const municipality = await Municipality.create({
+        license_id: license.id,
+        name,
+        region,
+        country,
+        contact_email,
+        contact_phone,
+        address,
+        is_active: is_active !== undefined ? is_active : true
+      }, { transaction: t });
+
+      const admin = await User.create({
+        municipality_id: municipality.id,
+        role: 'admin',
+        full_name: admin_user.full_name,
+        email: admin_user.email,
+        phone: admin_user.phone,
+        password_hash: passwordHash,
+        is_active: true
+      }, { transaction: t });
+
+      return { license, municipality, admin };
     });
 
-    // Créer la municipalité avec la licence
-    const municipality = await Municipality.create({
-      license_id: license.id,
-      name,
-      region,
-      country,
-      contact_email,
-      contact_phone,
-      address,
-      is_active: is_active !== undefined ? is_active : true
+    const { license, municipality, admin } = result;
+
+    const emailResult = await mailService.sendMail({
+      to: admin.email,
+      subject: `[Muno] Accès administrateur pour ${municipality.name}`,
+      text:
+        `Bonjour ${admin.full_name},\n\n` +
+        `Un compte administrateur a été créé pour la mairie ${municipality.name} sur la plateforme Muno.\n\n` +
+        `Email : ${admin.email}\n` +
+        `Mot de passe temporaire : ${tempPassword}\n\n` +
+        `Clé de licence : ${license.license_key}\n` +
+        `Licence valable jusqu'au : ${new Date(license.expires_at).toLocaleDateString('fr-FR')}\n\n` +
+        `Connectez-vous et changez votre mot de passe dès que possible.\n`,
+      html:
+        `<p>Bonjour <strong>${admin.full_name}</strong>,</p>` +
+        `<p>Un compte administrateur a été créé pour la mairie <strong>${municipality.name}</strong> sur la plateforme Muno.</p>` +
+        `<ul>` +
+        `<li>Email : <code>${admin.email}</code></li>` +
+        `<li>Mot de passe temporaire : <code>${tempPassword}</code></li>` +
+        `<li>Clé de licence : <code>${license.license_key}</code></li>` +
+        `<li>Licence valable jusqu'au : <strong>${new Date(license.expires_at).toLocaleDateString('fr-FR')}</strong></li>` +
+        `</ul>` +
+        `<p>Connectez-vous et changez votre mot de passe dès que possible.</p>`
     });
 
-    logger.info(`Municipalité créée: ${municipality.name} (ID: ${municipality.id})`);
+    logger.info(`Municipalité créée: ${municipality.name} (ID: ${municipality.id}) + admin ${admin.email}`);
 
     res.status(201).json({
       success: true,
-      message: 'Municipalité créée avec succès',
+      message: 'Municipalité, licence et administrateur créés avec succès',
       data: {
         municipality,
-        license
+        license,
+        admin: {
+          id: admin.id,
+          email: admin.email,
+          full_name: admin.full_name,
+          phone: admin.phone,
+          temp_password: tempPassword
+        },
+        email_sent: emailResult.sent
       }
     });
-
   } catch (error) {
     logger.error(`Erreur createMunicipality: ${error.message}`, { error });
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la création de la municipalité'
+      message: 'Erreur lors de la création de la municipalité',
+      error: error.message
     });
   }
 };

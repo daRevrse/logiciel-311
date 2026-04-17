@@ -2,23 +2,27 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, AlertCircle, Wrench, ShoppingBag,
-  Construction, FileText, Settings, X,
+  Construction, FileText, Settings, X, Building2, Key, Shield, Users, Tag,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const navItems = [
+const baseNavItems = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/admin/dashboard' },
   { label: 'Signalements',    icon: AlertCircle,     to: '/admin/reports' },
-  { label: 'Interventions',   icon: Wrench,          to: '/admin/interventions' },
-  { label: 'Marchés',         icon: ShoppingBag,     to: '/admin/marches' },
-  { label: 'Voirie',          icon: Construction,    to: '/admin/voirie' },
-  { label: 'Documents',       icon: FileText,        to: '/admin/documents' },
-  { label: 'Paramètres',      icon: Settings,        to: '/admin/settings' },
+  { label: 'Catégories',      icon: Tag,             to: '/admin/categories' },
+  { label: 'Utilisateurs',    icon: Users,           to: '/admin/users' },
+];
+
+const superAdminNavItems = [
+  { label: 'Municipalités',        icon: Building2, to: '/admin/municipalities' },
+  { label: 'Licences',             icon: Key,       to: '/admin/licenses' },
+  { label: 'Super administrateurs', icon: Shield,   to: '/admin/super-admins' },
 ];
 
 const Sidebar = ({ mobileOpen, onClose }) => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const navItems = [...baseNavItems, ...(isSuperAdmin && isSuperAdmin() ? superAdminNavItems : [])];
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 border-r-0 font-['Manrope'] text-sm tracking-tight">

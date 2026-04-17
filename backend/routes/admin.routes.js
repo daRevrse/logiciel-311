@@ -14,11 +14,13 @@ const { body, param, query } = require('express-validator');
 
 // Middlewares
 const { authenticateToken, requireAdmin } = require('../middlewares/auth');
-const { validateLicense } = require('../middlewares/license');
+const { validateLicense, requireFeature } = require('../middlewares/license');
 const { logActivity } = require('../middlewares/requestLogger');
 
-// Contrôleur
+// Contrôleurs
 const adminController = require('../controllers/adminController');
+const licenseAdminController = require('../controllers/licenseAdminController');
+const superAdminController = require('../controllers/superAdminController');
 
 /**
  * Validation ID signalement
@@ -199,6 +201,7 @@ router.get(
   authenticateToken,
   requireAdmin,
   validateLicense,
+  requireFeature('statistics'),
   logActivity('view_dashboard_stats'),
   validateDates,
   adminController.getDashboardStats
@@ -552,6 +555,78 @@ router.post(
     ...validateLicenseData
   ],
   adminController.createMunicipalityLicense
+);
+
+// ============================================
+// ROUTES GESTION DES LICENCES (SUPER ADMIN)
+// ============================================
+
+router.get('/modules/catalog', authenticateToken, requireSuperAdmin, licenseAdminController.getCatalog);
+
+router.get('/licenses', authenticateToken, requireSuperAdmin, licenseAdminController.listLicenses);
+router.get(
+  '/licenses/:id',
+  authenticateToken,
+  requireSuperAdmin,
+  [param('id').isInt({ min: 1 }).withMessage('ID invalide')],
+  licenseAdminController.getLicense
+);
+router.patch(
+  '/licenses/:id/modules',
+  authenticateToken,
+  requireSuperAdmin,
+  logActivity('update_license_modules'),
+  [
+    param('id').isInt({ min: 1 }).withMessage('ID invalide'),
+    body('modules').optional().isObject(),
+    body('features').optional().isObject()
+  ],
+  licenseAdminController.updateModules
+);
+router.post(
+  '/licenses/:id/renew',
+  authenticateToken,
+  requireSuperAdmin,
+  logActivity('renew_license'),
+  [
+    param('id').isInt({ min: 1 }).withMessage('ID invalide'),
+    body('years').optional().isInt({ min: 1, max: 10 }).withMessage('Années 1-10')
+  ],
+  licenseAdminController.renewLicense
+);
+router.patch(
+  '/licenses/:id/deactivate',
+  authenticateToken,
+  requireSuperAdmin,
+  logActivity('deactivate_license'),
+  [param('id').isInt({ min: 1 }).withMessage('ID invalide')],
+  licenseAdminController.deactivateLicense
+);
+router.patch(
+  '/licenses/:id/activate',
+  authenticateToken,
+  requireSuperAdmin,
+  logActivity('activate_license'),
+  [param('id').isInt({ min: 1 }).withMessage('ID invalide')],
+  licenseAdminController.activateLicense
+);
+
+// ============================================
+// ROUTES GESTION DES SUPER ADMINS
+// ============================================
+
+router.get('/super-admins', authenticateToken, requireSuperAdmin, superAdminController.listSuperAdmins);
+router.post(
+  '/super-admins',
+  authenticateToken,
+  requireSuperAdmin,
+  logActivity('create_super_admin'),
+  [
+    body('full_name').notEmpty().isLength({ min: 3, max: 100 }).withMessage('Nom entre 3 et 100 caractères'),
+    body('email').isEmail().withMessage('Email invalide'),
+    body('phone').optional().matches(/^\+?[0-9]{8,15}$/).withMessage('Téléphone invalide')
+  ],
+  superAdminController.createSuperAdmin
 );
 
 module.exports = router;

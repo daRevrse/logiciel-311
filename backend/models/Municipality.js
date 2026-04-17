@@ -25,6 +25,14 @@ module.exports = (sequelize, DataTypes) => {
     region: {
       type: DataTypes.STRING(100)
     },
+    country: {
+      type: DataTypes.STRING(100)
+    },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      field: 'is_active'
+    },
     logo_url: {
       type: DataTypes.STRING(500),
       field: 'logo_url',
