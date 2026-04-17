@@ -330,6 +330,19 @@ const Login = () => {
             Espace Administrateur
           </Link>
         </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <Link
+            to="/public-report"
+            className="flex items-center justify-center gap-2 p-4 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 border border-dashed border-slate-300 transition-all group"
+          >
+            <Map className="h-5 w-5 text-slate-500 group-hover:text-primary-600" />
+            <div className="text-left">
+              <p className="text-sm font-bold">Signaler sans compte</p>
+              <p className="text-xs text-slate-500">Rapide et anonyme</p>
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );

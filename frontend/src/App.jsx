@@ -13,6 +13,7 @@ import ReportsList from './pages/citizen/ReportsList';
 import CreateReport from './pages/citizen/CreateReport';
 import ReportDetail from './pages/citizen/ReportDetail';
 import MyReports from './pages/citizen/MyReports';
+import PublicReport from './pages/citizen/PublicReport';
 
 // Pages admin
 import AdminLogin from './pages/admin/AdminLogin';
@@ -106,6 +107,7 @@ function App() {
         <Routes>
           <Route path="/login"       element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/public-report" element={<PublicReport />} />
 
           <Route path="/" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
 

@@ -223,7 +223,13 @@ const Navbar = () => {
 
           {/* Bouton de connexion si non authentifié */}
           {!isAuthenticated && (
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <Link 
+                to="/public-report"
+                className="text-primary-600 hover:text-primary-700 font-medium text-sm hidden sm:block"
+              >
+                Faire un signalement
+              </Link>
               <Button variant="primary" onClick={() => navigate('/login')}>
                 Se connecter
               </Button>

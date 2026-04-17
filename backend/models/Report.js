@@ -16,12 +16,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     citizen_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       field: 'citizen_id',
       references: {
         model: 'users',
         key: 'id'
       }
+    },
+    is_anonymous: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_anonymous'
     },
     category_id: {
       type: DataTypes.INTEGER,
@@ -147,7 +153,12 @@ module.exports = (sequelize, DataTypes) => {
     const ageInDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
 
     // Appliquer la formule
-    const score = supportsCount + (ageInDays * 0.5);
+    // Bonus de +10 si le signalement n'est pas anonyme (vient d'un compte citoyen)
+    let score = supportsCount + (ageInDays * 0.5);
+    
+    if (!this.is_anonymous) {
+      score += 10;
+    }
 
     return Math.round(score);
   };

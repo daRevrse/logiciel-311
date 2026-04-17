@@ -571,6 +571,24 @@ class ReportService {
       throw error;
     }
   }
+
+  /**
+   * Récupérer la liste des municipalités actives (pour le signalement public)
+   * @returns {Promise<Array>}
+   */
+  async getPublicMunicipalities() {
+    try {
+      const municipalities = await Municipality.findAll({
+        where: { is_active: true },
+        attributes: ['id', 'name', 'region', 'logo_url'],
+        order: [['name', 'ASC']]
+      });
+      return municipalities;
+    } catch (error) {
+      logger.error('Erreur récupération municipalités publiques:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new ReportService();

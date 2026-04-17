@@ -15,17 +15,26 @@ const uploadService = require('../services/uploadService');
  */
 
 // Appliquer auth + licence sur toutes les routes
-router.use(authenticateToken);
-router.use(validateLicense);
+// Appliquer la protection sur les routes spécifiques ci-dessous
+const needsAuth = [authenticateToken, validateLicense];
 
 // ============================================
 // ROUTES CATÉGORIES & STATISTIQUES
 // ============================================
 
 /**
+ * @route   GET /api/reports/public/municipalities
+ * @desc    Récupérer les municipalités actives
+ * @access  Public
+ */
+router.get('/public/municipalities',
+  reportController.getPublicMunicipalities
+);
+
+/**
  * @route   GET /api/reports/categories
- * @desc    Récupérer les catégories de la municipalité
- * @access  Authentifié
+ * @desc    Récupérer les catégories d'une municipalité
+ * @access  Public (si municipalityId fourni en query)
  */
 router.get('/categories',
   reportController.getCategories
@@ -37,6 +46,7 @@ router.get('/categories',
  * @access  Authentifié
  */
 router.get('/statistics',
+  ...needsAuth,
   reportController.getStatistics
 );
 
@@ -50,6 +60,7 @@ router.get('/statistics',
  * @access  Authentifié (citoyen)
  */
 router.get('/my-reports',
+  ...needsAuth,
   reportController.getMyReports
 );
 
@@ -63,6 +74,7 @@ router.get('/my-reports',
  * @access  Authentifié (citoyen)
  */
 router.post('/',
+  require('../middlewares/auth').optionalAuth, // Utilisation d'authentification facultative
   reportCreationLimiter,
   reportController.validationRules.createReport,
   reportController.validate,
@@ -76,6 +88,7 @@ router.post('/',
  * @access  Authentifié
  */
 router.get('/',
+  ...needsAuth,
   reportController.validationRules.listReports,
   reportController.validate,
   reportController.listReports
@@ -87,6 +100,7 @@ router.get('/',
  * @access  Authentifié
  */
 router.get('/top-supported',
+  ...needsAuth,
   logActivity('view_top_supported'),
   supportController.getTopSupportedReports
 );
@@ -97,6 +111,7 @@ router.get('/top-supported',
  * @access  Authentifié
  */
 router.get('/:id',
+  ...needsAuth,
   reportController.getReport
 );
 
@@ -106,6 +121,7 @@ router.get('/:id',
  * @access  Authentifié (créateur uniquement)
  */
 router.put('/:id',
+  ...needsAuth,
   reportController.validationRules.updateReport,
   reportController.validate,
   logActivity('update_report', 'report'),
@@ -118,6 +134,7 @@ router.put('/:id',
  * @access  Authentifié (créateur uniquement)
  */
 router.delete('/:id',
+  ...needsAuth,
   logActivity('delete_report', 'report'),
   reportController.deleteReport
 );
@@ -132,6 +149,7 @@ router.delete('/:id',
  * @access  Authentifié (créateur uniquement)
  */
 router.post('/:reportId/photos',
+  ...needsAuth,
   uploadLimiter,
   checkReportOwnership,
   uploadService.single('photo'),
@@ -145,6 +163,7 @@ router.post('/:reportId/photos',
  * @access  Authentifié (créateur uniquement)
  */
 router.delete('/photos/:photoId',
+  ...needsAuth,
   logActivity('delete_photo', 'report_photo'),
   reportController.deletePhoto
 );

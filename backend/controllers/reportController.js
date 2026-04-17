@@ -16,8 +16,8 @@ class ReportController {
    */
   async createReport(req, res) {
     try {
-      const citizenId = req.userId;
-      const municipalityId = req.municipalityId;
+      const citizenId = req.userId || null;
+      const municipalityId = req.municipalityId || req.body.municipalityId;
 
       const {
         categoryId,
@@ -327,7 +327,14 @@ class ReportController {
    */
   async getCategories(req, res) {
     try {
-      const municipalityId = req.municipalityId;
+      const municipalityId = req.municipalityId || req.query.municipalityId;
+
+      if (!municipalityId) {
+        return res.status(400).json({
+          success: false,
+          message: 'L\'ID de la municipalité est requis pour lister les catégories.'
+        });
+      }
 
       const categories = await reportService.getCategories(municipalityId);
 
@@ -370,10 +377,37 @@ class ReportController {
   }
 
   /**
+   * Récupérer les municipalités publiques
+   * GET /api/reports/public/municipalities
+   */
+  async getPublicMunicipalities(req, res) {
+    try {
+      const municipalities = await reportService.getPublicMunicipalities();
+
+      res.json({
+        success: true,
+        count: municipalities.length,
+        data: municipalities
+      });
+    } catch (error) {
+      logger.error('Erreur récupération municipalités:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la récupération des municipalités'
+      });
+    }
+  }
+
+  /**
    * Validation rules
    */
   static validationRules = {
     createReport: [
+      body('municipalityId')
+        .notEmpty()
+        .withMessage('La municipalité est requise')
+        .isInt()
+        .withMessage('ID municipalité invalide'),
       body('categoryId').isInt().withMessage('ID catégorie invalide'),
       body('title')
         .trim()
@@ -469,6 +503,7 @@ module.exports = {
   deletePhoto: controller.deletePhoto.bind(controller),
   getCategories: controller.getCategories.bind(controller),
   getStatistics: controller.getStatistics.bind(controller),
+  getPublicMunicipalities: controller.getPublicMunicipalities.bind(controller),
   validate,
   validationRules: ReportController.validationRules
 };

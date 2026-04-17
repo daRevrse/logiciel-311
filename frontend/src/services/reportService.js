@@ -116,10 +116,21 @@ const reportService = {
 
   /**
    * Obtenir les catégories de signalements
+   * @param {number} municipalityId - ID de la municipalité (optionnel pour les connectés)
    * @returns {Promise<Array>} Liste des catégories
    */
-  async getCategories() {
-    const response = await api.get('/reports/categories');
+  async getCategories(municipalityId = null) {
+    const params = municipalityId ? { municipalityId } : {};
+    const response = await api.get('/reports/categories', { params });
+    return response.data;
+  },
+
+  /**
+   * Récupérer les municipalités actives pour le signalement public
+   * @returns {Promise<Array>}
+   */
+  async getPublicMunicipalities() {
+    const response = await api.get('/reports/public/municipalities');
     return response.data;
   },
 
