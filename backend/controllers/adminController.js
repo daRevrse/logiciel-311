@@ -23,7 +23,24 @@
 const adminService = require('../services/adminService');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
-const { Category, User } = require('../models');
+const { Category, User, Municipality } = require('../models');
+
+/**
+ * Champs autorisés pour la mise à jour des settings municipalité (admin)
+ */
+const MUNICIPALITY_SETTINGS_FIELDS = [
+  'logo_url',
+  'banner_url',
+  'primary_color',
+  'secondary_color',
+  'display_name',
+  'public_description',
+  'address',
+  'contact_phone',
+  'contact_email',
+  'public_hours',
+  'priority_support_threshold'
+];
 
 /**
  * Changer le statut d'un signalement
@@ -1271,3 +1288,74 @@ exports.getGlobalReports = async (req, res) => {
   }
 };
 
+
+// ============================================
+// MUNICIPALITY SETTINGS (ADMIN, SCOPED)
+// ============================================
+
+/**
+ * GET /api/admin/municipality/settings
+ * Retourne la municipalité de l'admin connecté avec tous les champs
+ * de branding / page publique.
+ */
+exports.getMunicipalitySettings = async (req, res) => {
+  try {
+    const municipalityId = req.municipalityId;
+    if (!municipalityId) {
+      return res.status(400).json({ success: false, message: 'Municipalité introuvable pour cet utilisateur' });
+    }
+
+    const municipality = await Municipality.findByPk(municipalityId);
+    if (!municipality) {
+      return res.status(404).json({ success: false, message: 'Municipalité introuvable' });
+    }
+
+    res.json({ success: true, data: { municipality } });
+  } catch (error) {
+    logger.error(`Erreur getMunicipalitySettings: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
+/**
+ * PATCH /api/admin/municipality/settings
+ * Met à jour uniquement les champs fournis parmi la liste autorisée.
+ */
+exports.updateMunicipalitySettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Erreur de validation',
+        errors: errors.array()
+      });
+    }
+
+    const municipalityId = req.municipalityId;
+    if (!municipalityId) {
+      return res.status(400).json({ success: false, message: 'Municipalité introuvable pour cet utilisateur' });
+    }
+
+    const municipality = await Municipality.findByPk(municipalityId);
+    if (!municipality) {
+      return res.status(404).json({ success: false, message: 'Municipalité introuvable' });
+    }
+
+    const updates = {};
+    for (const field of MUNICIPALITY_SETTINGS_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    await municipality.update(updates);
+
+    logger.info(`Municipality settings updated by admin ${req.userId} (municipality ${municipalityId})`);
+
+    res.json({ success: true, data: { municipality } });
+  } catch (error) {
+    logger.error(`Erreur updateMunicipalitySettings: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};

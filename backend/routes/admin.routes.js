@@ -406,6 +406,61 @@ router.delete(
 );
 
 // ============================================
+// ROUTES SETTINGS MUNICIPALITÉ (ADMIN SCOPE)
+// ============================================
+
+/**
+ * Validation des settings municipalité (tous champs optionnels en PATCH).
+ */
+const validateMunicipalitySettings = [
+  body('logo_url').optional().isString().isLength({ max: 500 }).withMessage('logo_url trop long'),
+  body('banner_url').optional().isString().isLength({ max: 500 }).withMessage('banner_url trop long'),
+  body('primary_color')
+    .optional()
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('primary_color invalide (format #RRGGBB)'),
+  body('secondary_color')
+    .optional()
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('secondary_color invalide (format #RRGGBB)'),
+  body('display_name').optional().isString().isLength({ max: 150 }).withMessage('display_name max 150 caractères'),
+  body('public_description').optional().isString().isLength({ max: 2000 }).withMessage('public_description max 2000 caractères'),
+  body('address').optional().isString().isLength({ max: 255 }).withMessage('address max 255 caractères'),
+  body('contact_phone').optional().isString().isLength({ max: 30 }).withMessage('contact_phone invalide'),
+  body('contact_email').optional().isEmail().withMessage('contact_email invalide'),
+  body('public_hours').optional().isObject().withMessage('public_hours doit être un objet'),
+  body('priority_support_threshold').optional().isInt({ min: 1 }).withMessage('priority_support_threshold doit être >= 1')
+];
+
+/**
+ * @route   GET /api/admin/municipality/settings
+ * @desc    Récupérer les settings (branding/page publique) de la municipalité de l'admin
+ * @access  Private (Admin)
+ */
+router.get(
+  '/municipality/settings',
+  authenticateToken,
+  requireAdmin,
+  validateLicense,
+  adminController.getMunicipalitySettings
+);
+
+/**
+ * @route   PATCH /api/admin/municipality/settings
+ * @desc    Mettre à jour les settings branding/page publique
+ * @access  Private (Admin)
+ */
+router.patch(
+  '/municipality/settings',
+  authenticateToken,
+  requireAdmin,
+  validateLicense,
+  logActivity('update_municipality_settings'),
+  validateMunicipalitySettings,
+  adminController.updateMunicipalitySettings
+);
+
+// ============================================
 // ROUTES GESTION DES MUNICIPALITÉS (SUPER ADMIN)
 // ============================================
 
