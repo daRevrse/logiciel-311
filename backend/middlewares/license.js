@@ -8,6 +8,11 @@ const logger = require('../utils/logger');
  */
 const validateLicense = async (req, res, next) => {
   try {
+    // Les super admins traversent la vérification de licence (pas de municipalité)
+    if (req.user?.isSuperAdmin?.()) {
+      return next();
+    }
+
     // Récupérer le municipality_id depuis le token (injecté par auth middleware)
     const municipalityId = req.municipalityId;
 
@@ -18,12 +23,15 @@ const validateLicense = async (req, res, next) => {
       });
     }
 
+    // Debugging municipalityId
+    logger.info(`[DEBUG LICENSE] Verification pour municipalityId: ${municipalityId} (Type: ${typeof municipalityId})`);
+
     // Charger la municipalité avec sa licence
     const municipality = await Municipality.findByPk(municipalityId, {
       include: [{
         model: License,
         as: 'license',
-        required: true
+        required: false
       }]
     });
 
@@ -93,6 +101,11 @@ const validateLicense = async (req, res, next) => {
  */
 const requireFeature = (feature) => {
   return (req, res, next) => {
+    // Les super admins ont accès à toutes les fonctionnalités
+    if (req.user?.isSuperAdmin?.()) {
+      return next();
+    }
+
     const license = req.license;
 
     if (!license) {
@@ -103,11 +116,22 @@ const requireFeature = (feature) => {
     }
 
     // Vérifier si la fonctionnalité est activée
-    const features = license.features || {};
+    let features = license.features || {};
+    
+    // Au cas où features serait une chaîne JSON (selon le driver/seeder)
+    if (typeof features === 'string') {
+      try {
+        features = JSON.parse(features);
+      } catch (e) {
+        logger.error(`Erreur parsing features pour licence ${license.license_key}:`, e);
+        features = {};
+      }
+    }
+
     const isEnabled = features[feature];
 
     if (!isEnabled) {
-      logger.warn(`Fonctionnalité '${feature}' non activée pour licence ${license.license_key}`);
+      logger.warn(`Fonctionnalité '${feature}' non activée pour licence ${license.license_key}. Features dispos: ${JSON.stringify(features)}`);
       return res.status(403).json({
         success: false,
         message: `La fonctionnalité '${feature}' n'est pas activée pour votre licence`

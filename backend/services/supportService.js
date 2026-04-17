@@ -263,7 +263,8 @@ class SupportService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name', 'email', 'created_at']
+            attributes: ['id', 'full_name', 'email', 'phone'],
+            required: false
           }
         ],
         order: [['created_at', 'DESC']],
@@ -368,7 +369,8 @@ class SupportService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name']
+            attributes: ['full_name'],
+            required: false
           }
         ],
         attributes: {
@@ -436,7 +438,8 @@ class SupportService {
               {
                 model: User,
                 as: 'citizen',
-                attributes: ['id', 'full_name']
+                attributes: ['id', 'full_name'],
+                required: false
               }
             ]
           }

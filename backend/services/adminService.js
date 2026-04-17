@@ -62,6 +62,20 @@ class AdminService {
         };
       }
 
+      // 3b. Vérifier que la transition de statut est autorisée
+      const allowedTransitions = {
+        pending:     ['in_progress', 'rejected'],
+        in_progress: ['resolved', 'rejected', 'pending'],
+        resolved:    ['in_progress'],
+        rejected:    ['pending']
+      };
+      if (!allowedTransitions[report.status]?.includes(newStatus)) {
+        return {
+          success: false,
+          message: `Transition non autorisée : ${report.status} → ${newStatus}`
+        };
+      }
+
       const oldStatus = report.status;
 
       // 4. Créer une entrée dans l'historique AVANT de changer le statut
@@ -75,6 +89,14 @@ class AdminService {
 
       // 5. Mettre à jour le statut du signalement
       report.status = newStatus;
+      if (newStatus === 'resolved') {
+        report.resolved_at = new Date();
+        report.resolved_by = adminId;
+      } else if (oldStatus === 'resolved') {
+        // Réouverture : on efface les marqueurs de résolution
+        report.resolved_at = null;
+        report.resolved_by = null;
+      }
       await report.save();
 
       logger.info(`✅ Status changé: Signalement ${reportId} (${oldStatus} → ${newStatus}) par admin ${adminId}`);
@@ -93,7 +115,8 @@ class AdminService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name', 'phone', 'email']
+            attributes: ['id', 'full_name', 'phone', 'email'],
+            required: false
           },
           {
             model: Category,
@@ -411,9 +434,8 @@ class AdminService {
     try {
       const { dateFrom, dateTo } = filters;
 
-      const whereClause = {
-        municipality_id: municipalityId
-      };
+      // Super admin (sans municipalityId) → agrégé cross-tenant
+      const whereClause = municipalityId ? { municipality_id: municipalityId } : {};
 
       // Filtre par date si fourni
       if (dateFrom || dateTo) {
@@ -454,16 +476,9 @@ class AdminService {
       });
 
       // 3. Signalements assignés vs non-assignés
-      const assignedCount = await Report.count({
-        where: {
-          ...whereClause,
-          assigned_to_admin_id: {
-            [Op.ne]: null
-          }
-        }
-      });
-
-      const unassignedCount = totalReports - assignedCount;
+      // NOTE: la colonne assigned_to_admin_id n'existe pas encore en base ; stats neutralisées
+      const assignedCount = 0;
+      const unassignedCount = totalReports;
 
       // 4. Top 10 signalements les plus appuyés
       const topSupported = await Report.findAll({
@@ -508,9 +523,8 @@ class AdminService {
           {
             model: Report,
             as: 'report',
-            where: {
-              municipality_id: municipalityId
-            },
+            where: municipalityId ? { municipality_id: municipalityId } : undefined,
+            required: !!municipalityId,
             attributes: []
           }
         ]
@@ -601,7 +615,8 @@ class AdminService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name', 'phone']
+            attributes: ['id', 'full_name', 'phone'],
+            required: false
           },
           {
             model: Category,

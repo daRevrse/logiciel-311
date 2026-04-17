@@ -24,7 +24,8 @@ class ReportService {
         description,
         address,
         latitude,
-        longitude
+        longitude,
+        is_anonymous
       } = reportData;
 
       // Vérifier que la catégorie existe et appartient à la municipalité
@@ -51,7 +52,8 @@ class ReportService {
         latitude: latitude || null,
         longitude: longitude || null,
         status: 'pending',
-        priority_score: 0
+        priority_score: 0,
+        is_anonymous: is_anonymous || false
       });
 
       // Le hook afterCreate met à jour automatiquement le priority_score
@@ -89,7 +91,8 @@ class ReportService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name', 'phone']
+            attributes: ['id', 'full_name', 'phone'],
+            required: false // Très important : permet de garder les signalements sans citoyen (anonymes)
           },
           {
             model: Category,
@@ -152,9 +155,10 @@ class ReportService {
       } = filters;
 
       // Construire les conditions WHERE
-      const where = {
-        municipality_id: municipalityId
-      };
+      const where = {};
+      if (municipalityId) {
+        where.municipality_id = municipalityId;
+      }
 
       if (status) {
         where.status = status;
@@ -203,7 +207,8 @@ class ReportService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name']
+            attributes: ['id', 'full_name'],
+            required: false // Important pour les signalements anonymes
           },
           {
             model: Category,
@@ -536,24 +541,27 @@ class ReportService {
    */
   async getStatistics(municipalityId) {
     try {
-      const total = await Report.count({
-        where: { municipality_id: municipalityId }
-      });
+      const where = {};
+      if (municipalityId) {
+        where.municipality_id = municipalityId;
+      }
+
+      const total = await Report.count({ where });
 
       const pending = await Report.count({
-        where: { municipality_id: municipalityId, status: 'pending' }
+        where: { ...where, status: 'pending' }
       });
 
       const inProgress = await Report.count({
-        where: { municipality_id: municipalityId, status: 'in_progress' }
+        where: { ...where, status: 'in_progress' }
       });
 
       const resolved = await Report.count({
-        where: { municipality_id: municipalityId, status: 'resolved' }
+        where: { ...where, status: 'resolved' }
       });
 
       const rejected = await Report.count({
-        where: { municipality_id: municipalityId, status: 'rejected' }
+        where: { ...where, status: 'rejected' }
       });
 
       return {
@@ -586,6 +594,49 @@ class ReportService {
       return municipalities;
     } catch (error) {
       logger.error('Erreur récupération municipalités publiques:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Rechercher des signalements à proximité
+   * @param {number} latitude
+   * @param {number} longitude
+   * @param {number} radius - Rayon en km (approximation par boîte englobante)
+   * @returns {Promise<Array>}
+   */
+  async searchByLocation(latitude, longitude, radius = 5) {
+    try {
+      // Approximation simple : 1 degré ~ 111km
+      const degreeDiff = radius / 111;
+      
+      const reports = await Report.findAll({
+        where: {
+          latitude: {
+            [Op.between]: [parseFloat(latitude) - degreeDiff, parseFloat(latitude) + degreeDiff]
+          },
+          longitude: {
+            [Op.between]: [parseFloat(longitude) - degreeDiff, parseFloat(longitude) + degreeDiff]
+          },
+          status: {
+            [Op.in]: ['pending', 'in_progress']
+          }
+        },
+        include: [
+          {
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name', 'icon', 'color']
+          }
+        ],
+        attributes: ['id', 'title', 'address', 'latitude', 'longitude', 'status', 'created_at'],
+        limit: 10,
+        order: [['created_at', 'DESC']]
+      });
+
+      return reports;
+    } catch (error) {
+      logger.error('Erreur recherche par proximité:', error);
       throw error;
     }
   }

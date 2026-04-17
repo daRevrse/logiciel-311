@@ -49,11 +49,11 @@ const ManageCategories = () => {
     if (category) {
       setEditingCategory(category);
       setFormData({
-        name: category.name,
+        name: category.name || '',
         description: category.description || '',
         icon: category.icon || 'map-pin',
         color: category.color || '#3B82F6',
-        active: category.active
+        active: !!category.active
       });
     } else {
       setEditingCategory(null);

@@ -25,7 +25,8 @@ class ReportController {
         description,
         address,
         latitude,
-        longitude
+        longitude,
+        is_anonymous // Extraire is_anonymous du body
       } = req.body;
 
       logger.info('📥 Création signalement - Données reçues:', {
@@ -35,7 +36,8 @@ class ReportController {
         latitude,
         longitude,
         citizenId,
-        municipalityId
+        municipalityId,
+        is_anonymous
       });
 
       const report = await reportService.createReport(citizenId, municipalityId, {
@@ -44,7 +46,8 @@ class ReportController {
         description,
         address,
         latitude,
-        longitude
+        longitude,
+        is_anonymous: is_anonymous || (citizenId === null) // Forcer true si pas de citizenId
       });
 
       res.status(201).json({
@@ -399,6 +402,41 @@ class ReportController {
   }
 
   /**
+   * Rechercher des signalements à proximité
+   * GET /api/reports/nearby
+   */
+  async getNearbyReports(req, res) {
+    try {
+      const { latitude, longitude, radius } = req.query;
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({
+          success: false,
+          message: 'Latitude et longitude sont requises'
+        });
+      }
+
+      const reports = await reportService.searchByLocation(
+        latitude,
+        longitude,
+        radius ? parseInt(radius) : 5
+      );
+
+      res.json({
+        success: true,
+        count: reports.length,
+        data: reports
+      });
+    } catch (error) {
+      logger.error('Erreur recherche proximité:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la recherche à proximité'
+      });
+    }
+  }
+
+  /**
    * Validation rules
    */
   static validationRules = {
@@ -504,6 +542,7 @@ module.exports = {
   getCategories: controller.getCategories.bind(controller),
   getStatistics: controller.getStatistics.bind(controller),
   getPublicMunicipalities: controller.getPublicMunicipalities.bind(controller),
+  getNearbyReports: controller.getNearbyReports.bind(controller),
   validate,
   validationRules: ReportController.validationRules
 };

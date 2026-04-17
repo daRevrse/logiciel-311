@@ -48,6 +48,13 @@ const RoleBasedRedirect = () => {
   return isAdmin() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />;
 };
 
+// Entrée / : page publique pour invités, redirection par rôle sinon
+const RootEntry = () => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  return isAuthenticated ? <RoleBasedRedirect /> : <PublicReport />;
+};
+
 // Layout citoyen : top navbar + contenu
 const CitizenLayout = ({ children }) => (
   <div className="min-h-screen bg-surface">
@@ -107,9 +114,9 @@ function App() {
         <Routes>
           <Route path="/login"       element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/public-report" element={<PublicReport />} />
+          <Route path="/public-report" element={<Navigate to="/" replace />} />
 
-          <Route path="/" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
+          <Route path="/" element={<RootEntry />} />
 
           {/* Routes citoyennes */}
           <Route path="/home"           element={<ProtectedRoute><CitizenLayout><Home /></CitizenLayout></ProtectedRoute>} />

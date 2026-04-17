@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const reportController = require('../controllers/reportController');
-const supportController = require('../controllers/supportController');
 const { authenticateToken } = require('../middlewares/auth');
 const { validateLicense } = require('../middlewares/license');
 const { reportCreationLimiter, uploadLimiter } = require('../middlewares/rateLimiter');
@@ -32,11 +31,21 @@ router.get('/public/municipalities',
 );
 
 /**
+ * @route   GET /api/reports/nearby
+ * @desc    Rechercher des signalements à proximité
+ * @access  Public
+ */
+router.get('/nearby',
+  reportController.getNearbyReports
+);
+
+/**
  * @route   GET /api/reports/categories
  * @desc    Récupérer les catégories d'une municipalité
- * @access  Public (si municipalityId fourni en query)
+ * @access  Public (si municipalityId fourni en query) ou Authentifié
  */
 router.get('/categories',
+  require('../middlewares/auth').optionalAuth,
   reportController.getCategories
 );
 
@@ -95,17 +104,6 @@ router.get('/',
 );
 
 /**
- * @route   GET /api/reports/top-supported
- * @desc    Obtenir les signalements les plus appuyés
- * @access  Authentifié
- */
-router.get('/top-supported',
-  ...needsAuth,
-  logActivity('view_top_supported'),
-  supportController.getTopSupportedReports
-);
-
-/**
  * @route   GET /api/reports/:id
  * @desc    Récupérer un signalement par ID
  * @access  Authentifié
@@ -158,12 +156,13 @@ router.post('/:reportId/photos',
 );
 
 /**
- * @route   DELETE /api/reports/photos/:photoId
+ * @route   DELETE /api/reports/:reportId/photos/:photoId
  * @desc    Supprimer une photo
  * @access  Authentifié (créateur uniquement)
  */
-router.delete('/photos/:photoId',
+router.delete('/:reportId/photos/:photoId',
   ...needsAuth,
+  checkReportOwnership,
   logActivity('delete_photo', 'report_photo'),
   reportController.deletePhoto
 );

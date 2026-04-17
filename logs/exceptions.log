@@ -1,0 +1,27 @@
+2026-04-17 09:09:47 [ERROR]: uncaughtException: require(...) is not a constructor
+[eval]:1
+const { Report, User, Category } = require('./backend/models'); const reportService = new (require('./backend/services/reportService'))(); async function test() { const reports = await Report.findAll({ where: { citizen_id: null } }); console.log('Anonymous reports in DB:', reports.length); if (reports.length > 0) { const muniId = reports[0].municipality_id; console.log('Testing listReports for muni:', muniId); const result = await reportService.listReports(muniId); console.log('Reports found by service:', result.reports.length); console.log('Total count in pagination:', result.pagination.total); } } test().catch(console.error);
+                                                                                      ^
+
+TypeError: require(...) is not a constructor
+    at [eval]:1:87
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [eval]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_string:74:3 {"error":{},"exception":true,"date":"Fri Apr 17 2026 09:09:47 GMT+0000 (temps universel coordonné)","process":{"pid":27304,"uid":null,"gid":null,"cwd":"C:\\Users\\Administrateur\\logiciel-311","execPath":"C:\\Program Files\\nodejs\\node.exe","version":"v22.22.0","argv":["C:\\Program Files\\nodejs\\node.exe"],"memoryUsage":{"rss":82960384,"heapTotal":37724160,"heapUsed":28190496,"external":2580302,"arrayBuffers":19199}},"os":{"loadavg":[0,0,0],"uptime":750650.828},"trace":[{"column":87,"file":"[eval]","function":null,"line":1,"method":null,"native":false},{"column":10,"file":"node:internal/vm","function":"runScriptInThisContext","line":209,"method":null,"native":false},{"column":12,"file":"node:internal/process/execution","function":null,"line":446,"method":null,"native":false},{"column":24,"file":"[eval]-wrapper","function":null,"line":6,"method":null,"native":false},{"column":60,"file":"node:internal/process/execution","function":"runScriptInContext","line":444,"method":null,"native":false},{"column":30,"file":"node:internal/process/execution","function":"evalFunction","line":279,"method":null,"native":false},{"column":3,"file":"node:internal/process/execution","function":"evalTypeScript","line":291,"method":null,"native":false},{"column":3,"file":"node:internal/main/eval_string","function":null,"line":74,"method":null,"native":false}]}
+[eval]:1
+const { Report, User, Category } = require('./backend/models'); const reportService = new (require('./backend/services/reportService'))(); async function test() { const reports = await Report.findAll({ where: { citizen_id: null } }); console.log('Anonymous reports in DB:', reports.length); if (reports.length > 0) { const muniId = reports[0].municipality_id; console.log('Testing listReports for muni:', muniId); const result = await reportService.listReports(muniId); console.log('Reports found by service:', result.reports.length); console.log('Total count in pagination:', result.pagination.total); } } test().catch(console.error);
+                                                                                      ^
+
+TypeError: require(...) is not a constructor
+    at [eval]:1:87
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [eval]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_string:74:3

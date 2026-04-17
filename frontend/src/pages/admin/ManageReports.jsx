@@ -69,7 +69,8 @@ const ManageReports = () => {
   const loadCategories = async () => {
     try {
       const data = await reportService.getCategories();
-      setCategories(data.categories || data);
+      const list = Array.isArray(data) ? data : (data?.data || data?.categories || []);
+      setCategories(list);
     } catch (err) {
       console.error('Erreur chargement catégories:', err);
     }

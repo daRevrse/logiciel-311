@@ -218,7 +218,8 @@ class NotificationService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['id', 'full_name', 'email', 'phone']
+            attributes: ['id', 'full_name', 'email', 'phone'],
+            required: false
           },
           {
             model: Municipality,
@@ -316,7 +317,8 @@ class NotificationService {
           {
             model: User,
             as: 'citizen',
-            attributes: ['full_name']
+            attributes: ['full_name'],
+            required: false
           },
           {
             model: Municipality,
@@ -348,7 +350,7 @@ class NotificationService {
             municipalityName: report.municipality.name,
             reportId: report.id,
             reportTitle: report.title,
-            citizenName: report.citizen.full_name,
+            citizenName: report.citizen ? report.citizen.full_name : 'Citoyen Anonyme',
             reportDescription: report.description,
             reportAddress: report.address,
             viewUrl: `${process.env.ADMIN_URL || 'http://localhost:5173/admin'}/reports/${report.id}`

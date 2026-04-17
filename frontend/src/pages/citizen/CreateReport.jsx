@@ -329,11 +329,11 @@ const CreateReport = () => {
 
             <LocationPicker
               address={formData.address}
-              setAddress={(address) => setFormData({ ...formData, address })}
+              setAddress={(address) => setFormData(prev => ({ ...prev, address }))}
               latitude={formData.latitude}
-              setLatitude={(latitude) => setFormData({ ...formData, latitude })}
+              setLatitude={(latitude) => setFormData(prev => ({ ...prev, latitude }))}
               longitude={formData.longitude}
-              setLongitude={(longitude) => setFormData({ ...formData, longitude })}
+              setLongitude={(longitude) => setFormData(prev => ({ ...prev, longitude }))}
               error={errors.address}
             />
           </div>

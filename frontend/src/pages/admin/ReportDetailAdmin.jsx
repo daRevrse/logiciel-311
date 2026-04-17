@@ -134,13 +134,29 @@ const ReportDetailAdmin = () => {
     });
   };
 
-  const statusOptions = [
-    { value: 'pending', label: 'En attente' },
-    { value: 'confirmed', label: 'Confirmé' },
-    { value: 'in_progress', label: 'En cours' },
-    { value: 'resolved', label: 'Résolu' },
-    { value: 'rejected', label: 'Rejeté' }
-  ];
+  const statusLabels = {
+    pending: 'En attente',
+    in_progress: 'En cours',
+    resolved: 'Résolu',
+    rejected: 'Rejeté'
+  };
+
+  // Transitions autorisées (doit rester synchrone avec adminService backend)
+  const allowedTransitions = {
+    pending:     ['in_progress', 'rejected'],
+    in_progress: ['resolved', 'rejected', 'pending'],
+    resolved:    ['in_progress'],
+    rejected:    ['pending']
+  };
+
+  const currentAllowed = allowedTransitions[report?.status] || [];
+  const statusOptions = currentAllowed.map(s => ({ value: s, label: statusLabels[s] }));
+
+  const openStatusChange = (preset) => {
+    setNewStatus(preset || '');
+    setStatusComment('');
+    setStatusModalOpen(true);
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -325,20 +341,36 @@ const ReportDetailAdmin = () => {
             {/* Actions rapides */}
             <Card>
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
-              <div className="space-y-3">
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => setStatusModalOpen(true)}
-                >
-                  Changer le statut
-                </Button>
+              <div className="space-y-2">
+                {currentAllowed.includes('in_progress') && (
+                  <Button variant="primary" fullWidth onClick={() => openStatusChange('in_progress')}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    {report.status === 'resolved' ? 'Rouvrir' : 'Prendre en charge'}
+                  </Button>
+                )}
+                {currentAllowed.includes('resolved') && (
+                  <Button variant="primary" fullWidth onClick={() => openStatusChange('resolved')}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Marquer résolu
+                  </Button>
+                )}
+                {currentAllowed.includes('rejected') && (
+                  <Button variant="outline" fullWidth onClick={() => openStatusChange('rejected')}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Rejeter
+                  </Button>
+                )}
+                {currentAllowed.includes('pending') && (
+                  <Button variant="outline" fullWidth onClick={() => openStatusChange('pending')}>
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Remettre en attente
+                  </Button>
+                )}
+                {currentAllowed.length === 0 && (
+                  <p className="text-sm text-gray-500">Aucune transition disponible depuis ce statut.</p>
+                )}
 
-                <Button
-                  variant="outline"
-                  fullWidth
-                  onClick={() => setNoteModalOpen(true)}
-                >
+                <Button variant="outline" fullWidth onClick={() => setNoteModalOpen(true)} className="mt-2">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Ajouter une note
                 </Button>
@@ -384,6 +416,7 @@ const ReportDetailAdmin = () => {
               { value: '', label: 'Sélectionner un statut' },
               ...statusOptions
             ]}
+            helperText={`Statut actuel : ${statusLabels[report.status] || report.status}`}
           />
 
           <Textarea

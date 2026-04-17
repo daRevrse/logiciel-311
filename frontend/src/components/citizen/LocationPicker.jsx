@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import { Navigation, MapPin, AlertTriangle } from 'lucide-react';
 import { Button } from '../common';
 import 'leaflet/dist/leaflet.css';
@@ -19,11 +19,27 @@ L.Icon.Default.mergeOptions({
 const LocationMarker = ({ position, setPosition }) => {
   useMapEvents({
     click(e) {
+      if (e.originalEvent) {
+        e.originalEvent.stopPropagation();
+      }
       setPosition(e.latlng);
     },
   });
 
   return position ? <Marker position={position} /> : null;
+};
+
+/**
+ * Composant pour recentrer la carte
+ */
+const ChangeView = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
 };
 
 /**
@@ -44,6 +60,9 @@ const LocationPicker = ({ address, setAddress, latitude, setLatitude, longitude,
       const pos = { lat: parseFloat(latitude), lng: parseFloat(longitude) };
       setMarkerPosition(pos);
       setMapCenter([pos.lat, pos.lng]);
+    } else {
+      // Sinon, tenter une géolocalisation automatique discrète
+      handleGetCurrentLocation();
     }
   }, []);
 
@@ -59,28 +78,35 @@ const LocationPicker = ({ address, setAddress, latitude, setLatitude, longitude,
 
   const reverseGeocode = async (lat, lng) => {
     try {
+      console.log(`[LocationPicker] Geocoding inverse pour ${lat}, ${lng}...`);
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
       );
       const data = await response.json();
 
       if (data.display_name) {
+        console.log(`[LocationPicker] Adresse trouvée : ${data.display_name}`);
         setAddress(data.display_name);
+      } else {
+        console.warn(`[LocationPicker] Aucune adresse trouvée pour ces coordonnées.`);
       }
     } catch (error) {
-      console.error('Erreur géocodage inverse:', error);
+      console.error('[LocationPicker] Erreur géocodage inverse:', error);
     }
   };
 
   const handleGetCurrentLocation = () => {
     setIsLoadingLocation(true);
     setLocationError('');
+    console.log('[LocationPicker] Tentative de récupération de la position...');
 
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude: lat, longitude: lng } = position.coords;
           const pos = { lat, lng };
+          
+          console.log(`[LocationPicker] Position récupérée : ${lat}, ${lng}`);
 
           setMarkerPosition(pos);
           setMapCenter([lat, lng]);
@@ -92,17 +118,32 @@ const LocationPicker = ({ address, setAddress, latitude, setLatitude, longitude,
           reverseGeocode(lat, lng);
         },
         (error) => {
-          console.error('Erreur géolocalisation:', error);
-          setLocationError('Impossible d\'obtenir votre position. Veuillez cliquer sur la carte.');
+          console.error('[LocationPicker] Erreur géolocalisation:', error);
+          let msg = 'Impossible d\'obtenir votre position.';
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              msg = 'Accès à la position refusé par le navigateur.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              msg = 'L\'information de position est indisponible.';
+              break;
+            case error.TIMEOUT:
+              msg = 'La demande de localisation a expiré.';
+              break;
+          }
+          
+          setLocationError(`${msg} Veuillez cliquer sur la carte.`);
           setIsLoadingLocation(false);
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
+          timeout: 10000,
           maximumAge: 0
         }
       );
     } else {
+      console.warn('[LocationPicker] Géolocalisation non supportée');
       setLocationError('La géolocalisation n\'est pas disponible sur cet appareil.');
       setIsLoadingLocation(false);
     }
@@ -151,13 +192,14 @@ const LocationPicker = ({ address, setAddress, latitude, setLatitude, longitude,
           </div>
         )}
 
-        <div className="rounded-lg overflow-hidden border border-gray-300 h-96">
+        <div className="rounded-lg overflow-hidden border border-gray-300 h-96 relative">
           <MapContainer
             center={mapCenter}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >
+            <ChangeView center={mapCenter} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
