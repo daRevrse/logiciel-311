@@ -45,13 +45,34 @@ module.exports = (sequelize, DataTypes) => {
       field: 'full_name'
     },
     role: {
-      type: DataTypes.ENUM('citizen', 'admin', 'super_admin'),
+      type: DataTypes.ENUM('citizen', 'agent', 'admin', 'super_admin'),
       defaultValue: 'citizen',
       validate: {
         isIn: {
-          args: [['citizen', 'admin', 'super_admin']],
+          args: [['citizen', 'agent', 'admin', 'super_admin']],
           msg: 'Rôle invalide'
         }
+      }
+    },
+    specializations: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      get() {
+        const value = this.getDataValue('specializations');
+        return value == null ? [] : value;
+      },
+      set(value) {
+        if (value === null || value === undefined) {
+          this.setDataValue('specializations', null);
+          return;
+        }
+        if (!Array.isArray(value)) {
+          throw new Error('specializations doit être un tableau');
+        }
+        if (!value.every((v) => Number.isInteger(v) && v > 0)) {
+          throw new Error('specializations doit contenir uniquement des entiers positifs');
+        }
+        this.setDataValue('specializations', value);
       }
     },
     is_active: {
