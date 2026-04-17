@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/common';
-import { Mail, Lock, AlertCircle, ChevronRight, ShieldCheck, Globe } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ChevronRight, ShieldCheck, Globe, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 
 /**
  * Page de connexion administrateur premium
  */
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const { municipalitySlug } = useParams();
   const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -18,6 +20,21 @@ const AdminLogin = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [municipality, setMunicipality] = useState(null);
+
+  // Charger le contexte mairie depuis le slug
+  useEffect(() => {
+    if (!municipalitySlug) {
+      setMunicipality(null);
+      return;
+    }
+    api.get(`/public/municipalities/by-slug/${municipalitySlug}`)
+      .then((res) => setMunicipality(res.data.data))
+      .catch(() => {
+        setMunicipality(null);
+        setError('Lien mairie invalide');
+      });
+  }, [municipalitySlug]);
 
   // Si déjà authentifié en tant qu'admin, rediriger vers le dashboard
   useEffect(() => {
@@ -33,7 +50,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await loginAdmin(formData.email, formData.password);
+      const response = await loginAdmin(formData.email, formData.password, municipalitySlug || null);
       console.log('Connexion réussie:', response);
       toast.success('Accès autorisé ! Bienvenue dans la console.');
       navigate('/admin/dashboard');
@@ -135,6 +152,23 @@ const AdminLogin = () => {
             </h3>
             <p className="text-slate-500 text-lg font-medium">Entrez vos identifiants pour accéder à la console.</p>
           </div>
+
+          {/* Contexte mairie */}
+          {municipality && (
+            <div className="mb-6 p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 flex items-center gap-3 animate-in fade-in">
+              {municipality.logo_url ? (
+                <img src={municipality.logo_url} alt={municipality.name} className="h-10 w-10 rounded-xl object-contain bg-white" />
+              ) : (
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+              )}
+              <div>
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Espace administrateur</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Mairie de {municipality.name}</p>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">

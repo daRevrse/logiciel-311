@@ -149,19 +149,8 @@ router.get(
   supportController.getSupportStats
 );
 
-/**
- * @route   GET /api/reports/top-supported
- * @desc    Obtenir les signalements les plus appuyés
- * @access  Private
- */
-router.get(
-  '/reports/top-supported',
-  authenticateToken,
-  validateLicense,
-  logActivity('view_top_supported'),
-  [...validatePagination, ...validateStatus],
-  supportController.getTopSupportedReports
-);
+// Note: Route /reports/top-supported déplacée dans report.routes.js pour éviter conflits de routing
+
 
 // ============================================
 // ROUTES ADMIN - Voir qui a appuyé

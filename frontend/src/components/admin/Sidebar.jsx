@@ -14,15 +14,40 @@ const baseNavItems = [
 ];
 
 const superAdminNavItems = [
-  { label: 'Municipalités',        icon: Building2, to: '/admin/municipalities' },
-  { label: 'Licences',             icon: Key,       to: '/admin/licenses' },
-  { label: 'Super administrateurs', icon: Shield,   to: '/admin/super-admins' },
+  { label: 'Vue globale',           icon: LayoutDashboard, to: '/admin/system' },
+  { label: 'Municipalités',         icon: Building2,       to: '/admin/municipalities' },
+  { label: 'Licences',              icon: Key,             to: '/admin/licenses' },
+  { label: 'Super administrateurs', icon: Shield,          to: '/admin/super-admins' },
 ];
+
+const SectionHeader = ({ children }) => (
+  <div className="px-4 pt-6 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+    {children}
+  </div>
+);
 
 const Sidebar = ({ mobileOpen, onClose }) => {
   const location = useLocation();
-  const { user, isSuperAdmin } = useAuth();
-  const navItems = [...baseNavItems, ...(isSuperAdmin && isSuperAdmin() ? superAdminNavItems : [])];
+  const { user, isSuperAdmin, municipality } = useAuth();
+  const superAdmin = isSuperAdmin && isSuperAdmin();
+  const NavLink = ({ label, Icon, to }) => {
+    const active = location.pathname === to || (to !== '/admin/dashboard' && location.pathname.startsWith(to + '/'));
+    return (
+      <Link
+        key={to}
+        to={to}
+        onClick={onClose}
+        className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
+          active
+            ? 'rounded-none border-l-4 border-primary text-primary font-bold bg-primary/5'
+            : 'rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800'
+        }`}
+      >
+        <Icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-primary' : ''}`} />
+        <span>{label}</span>
+      </Link>
+    );
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-slate-100 dark:bg-slate-900 border-r-0 font-['Manrope'] text-sm tracking-tight">
@@ -41,35 +66,35 @@ const Sidebar = ({ mobileOpen, onClose }) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 mt-4 px-4 space-y-1">
-        {navItems.map(({ label, icon: Icon, to }) => {
-          const active = location.pathname === to || (to !== '/admin/dashboard' && location.pathname.startsWith(to + '/'));
-          return (
-            <Link
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
-                active
-                  ? 'rounded-none border-l-4 border-primary text-primary font-bold bg-primary/5'
-                  : 'rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800'
-              }`}
-            >
-              <Icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-primary' : ''}`} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 mt-2 px-2 space-y-1 overflow-y-auto">
+        <SectionHeader>
+          {superAdmin ? 'Espace mairie courant' : 'Ma mairie'}
+        </SectionHeader>
+        {baseNavItems.map(({ label, icon, to }) => (
+          <NavLink key={to} label={label} Icon={icon} to={to} />
+        ))}
+
+        {superAdmin && (
+          <>
+            <div className="mx-4 my-3 border-t border-slate-200 dark:border-slate-800" />
+            <SectionHeader>Système</SectionHeader>
+            {superAdminNavItems.map(({ label, icon, to }) => (
+              <NavLink key={to} label={label} Icon={icon} to={to} />
+            ))}
+          </>
+        )}
       </nav>
 
-      {/* Support Hero - Bottom section from screen.html */}
+      {/* Support Hero - Bottom section */}
       <div className="p-6 mt-auto">
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2">Support Hero</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-2">
+            {superAdmin ? 'Mode' : 'Mairie'}
+          </p>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></div>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-              {user?.municipality?.name || 'Secteur B4'}
+            <div className={`w-2 h-2 rounded-full animate-pulse ${superAdmin ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">
+              {superAdmin ? 'Super administrateur' : (municipality?.name || user?.municipality?.name || '—')}
             </span>
           </div>
         </div>

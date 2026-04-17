@@ -77,10 +77,11 @@ const authService = {
    * @param {string} password - Mot de passe
    * @returns {Promise<Object>} Données d'authentification (user, token)
    */
-  async loginAdmin(email, password) {
+  async loginAdmin(email, password, municipalitySlug = null) {
     const response = await api.post('/auth/admin/login', {
       email,
-      password
+      password,
+      ...(municipalitySlug ? { municipalitySlug } : {})
     });
 
     // Le backend retourne { success, message, data: { user, token } }

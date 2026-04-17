@@ -82,8 +82,10 @@ const reportRoutes = require('./routes/report.routes');
 const supportRoutes = require('./routes/support.routes');
 const adminRoutes = require('./routes/admin.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const publicRoutes = require('./routes/public.routes');
 
 // Monter les routes
+app.use('/api/public', publicRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);

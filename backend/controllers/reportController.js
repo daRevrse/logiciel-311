@@ -442,6 +442,7 @@ class ReportController {
   static validationRules = {
     createReport: [
       body('municipalityId')
+        .if((value, { req }) => !req.municipalityId) // Requis uniquement si non fourni par le token
         .notEmpty()
         .withMessage('La municipalité est requise')
         .isInt()

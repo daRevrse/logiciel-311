@@ -7,6 +7,8 @@ const { reportCreationLimiter, uploadLimiter } = require('../middlewares/rateLim
 const { logActivity } = require('../middlewares/requestLogger');
 const { checkReportOwnership } = require('../middlewares/multiTenant');
 const uploadService = require('../services/uploadService');
+const supportController = require('../controllers/supportController');
+
 
 /**
  * Routes de gestion des signalements
@@ -58,6 +60,17 @@ router.get('/statistics',
   ...needsAuth,
   reportController.getStatistics
 );
+
+/**
+ * @route   GET /api/reports/top-supported
+ * @desc    Obtenir les signalements les plus appuyés
+ * @access  Authentifié
+ */
+router.get('/top-supported',
+  ...needsAuth,
+  supportController.getTopSupportedReports
+);
+
 
 // ============================================
 // ROUTES MES SIGNALEMENTS

@@ -795,6 +795,7 @@ exports.createMunicipality = async (req, res) => {
   const { sequelize, Municipality, License, User } = require('../models');
   const { sanitizeFeatures } = require('../config/modules');
   const mailService = require('../services/mailService');
+  const { generateUniqueSlug } = require('../utils/slug');
 
   try {
     const errors = validationResult(req);
@@ -867,9 +868,12 @@ exports.createMunicipality = async (req, res) => {
         features
       }, { transaction: t });
 
+      const slug = await generateUniqueSlug(Municipality, name);
+
       const municipality = await Municipality.create({
         license_id: license.id,
         name,
+        slug,
         region,
         country,
         contact_email,
@@ -966,9 +970,11 @@ exports.updateMunicipality = async (req, res) => {
     }
 
     const { Municipality } = require('../models');
+    const { generateUniqueSlug, slugify } = require('../utils/slug');
     const municipalityId = parseInt(req.params.id);
     const {
       name,
+      slug: slugInput,
       region,
       country,
       contact_email,
@@ -986,8 +992,14 @@ exports.updateMunicipality = async (req, res) => {
       });
     }
 
+    let newSlug = municipality.slug;
+    if (slugInput && slugify(slugInput) !== municipality.slug) {
+      newSlug = await generateUniqueSlug(Municipality, slugInput, municipalityId);
+    }
+
     await municipality.update({
       name: name || municipality.name,
+      slug: newSlug,
       region: region || municipality.region,
       country: country || municipality.country,
       contact_email: contact_email || municipality.contact_email,
@@ -1139,3 +1151,123 @@ exports.createMunicipalityLicense = async (req, res) => {
     });
   }
 };
+
+/**
+ * Statistiques globales (super admin uniquement) — vue cross-mairies.
+ * GET /api/admin/global/stats
+ */
+exports.getGlobalStats = async (req, res) => {
+  try {
+    const { Municipality, License, Report, User, sequelize } = require('../models');
+
+    const [
+      municipalitiesTotal,
+      municipalitiesActive,
+      reportsTotal,
+      reportsByStatusRaw,
+      usersByRoleRaw,
+      licensesActive,
+      licensesExpiringSoon,
+      topMunicipalitiesRaw
+    ] = await Promise.all([
+      Municipality.count(),
+      Municipality.count({ where: { is_active: true } }),
+      Report.count(),
+      Report.findAll({
+        attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['status'],
+        raw: true
+      }),
+      User.findAll({
+        attributes: ['role', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        group: ['role'],
+        raw: true
+      }),
+      License.count({ where: { is_active: true } }),
+      License.count({
+        where: {
+          is_active: true,
+          expires_at: {
+            [require('sequelize').Op.between]: [
+              new Date(),
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            ]
+          }
+        }
+      }),
+      Report.findAll({
+        attributes: [
+          'municipality_id',
+          [sequelize.fn('COUNT', sequelize.col('Report.id')), 'count']
+        ],
+        include: [{ model: Municipality, as: 'municipality', attributes: ['id', 'name', 'slug'] }],
+        group: ['municipality_id', 'municipality.id'],
+        order: [[sequelize.literal('count'), 'DESC']],
+        limit: 5,
+        raw: false
+      })
+    ]);
+
+    const reportsByStatus = Object.fromEntries(
+      reportsByStatusRaw.map((r) => [r.status, parseInt(r.count, 10)])
+    );
+    const usersByRole = Object.fromEntries(
+      usersByRoleRaw.map((r) => [r.role, parseInt(r.count, 10)])
+    );
+
+    res.json({
+      success: true,
+      data: {
+        municipalities: { total: municipalitiesTotal, active: municipalitiesActive },
+        reports: { total: reportsTotal, byStatus: reportsByStatus },
+        users: { byRole: usersByRole },
+        licenses: { active: licensesActive, expiringSoon: licensesExpiringSoon },
+        topMunicipalities: topMunicipalitiesRaw.map((r) => ({
+          id: r.municipality?.id,
+          name: r.municipality?.name,
+          slug: r.municipality?.slug,
+          count: parseInt(r.get('count'), 10)
+        }))
+      }
+    });
+  } catch (error) {
+    logger.error(`Erreur getGlobalStats: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
+/**
+ * Liste globale des signalements (super admin uniquement).
+ * GET /api/admin/global/reports
+ */
+exports.getGlobalReports = async (req, res) => {
+  try {
+    const { Report, Municipality, User, Category } = require('../models');
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Report.findAndCountAll({
+      include: [
+        { model: Municipality, as: 'municipality', attributes: ['id', 'name', 'slug'] },
+        { model: Category, as: 'category', attributes: ['id', 'name'] },
+        { model: User, as: 'citizen', attributes: ['id', 'full_name'] }
+      ],
+      order: [['created_at', 'DESC']],
+      limit,
+      offset
+    });
+
+    res.json({
+      success: true,
+      data: {
+        reports: rows,
+        pagination: { page, limit, total: count, pages: Math.ceil(count / limit) }
+      }
+    });
+  } catch (error) {
+    logger.error(`Erreur getGlobalReports: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+

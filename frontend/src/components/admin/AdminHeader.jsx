@@ -1,21 +1,52 @@
 import React, { Fragment, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
-import { LogOut, User, Menu as MenuIcon, Search, SlidersHorizontal } from 'lucide-react';
+import { LogOut, User, Menu as MenuIcon, Search, SlidersHorizontal, ShieldCheck, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const AdminHeader = ({ title, onMenuClick }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin, municipality } = useAuth();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState('');
 
+  const superAdmin = isSuperAdmin && isSuperAdmin();
+
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    if (!superAdmin && municipality?.slug) {
+      navigate(`/${municipality.slug}/admin/login`);
+    } else {
+      navigate('/admin/login');
+    }
   };
 
   return (
-    <header className="sticky top-0 z-30 flex justify-between items-center px-4 lg:px-8 w-full h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm dark:shadow-none font-['Manrope']">
+    <>
+    {/* Bandeau contextuel : Super admin vs Admin mairie */}
+    <div className={`sticky top-0 z-40 w-full px-4 lg:px-8 py-1.5 text-xs font-bold flex items-center gap-2 ${
+      superAdmin
+        ? 'bg-slate-900 text-amber-300 border-b border-slate-800'
+        : 'bg-primary/10 text-primary border-b border-primary/20'
+    }`}>
+      {superAdmin ? (
+        <>
+          <ShieldCheck className="h-3.5 w-3.5" />
+          <span className="uppercase tracking-widest">Administration système — Vue globale</span>
+        </>
+      ) : (
+        <>
+          {municipality?.logo_url ? (
+            <img src={municipality.logo_url} alt="" className="h-4 w-4 rounded object-contain bg-white" />
+          ) : (
+            <Building2 className="h-3.5 w-3.5" />
+          )}
+          <span className="uppercase tracking-widest truncate">
+            Mairie de {municipality?.name || '—'}
+          </span>
+        </>
+      )}
+    </div>
+    <header className="sticky top-6 z-30 flex justify-between items-center px-4 lg:px-8 w-full h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm dark:shadow-none font-['Manrope']">
       {/* Left: mobile menu + title + search */}
       <div className="flex items-center gap-4 lg:gap-8 flex-1 min-w-0">
         <button onClick={onMenuClick} className="lg:hidden text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-lg transition-colors flex-shrink-0">
@@ -96,6 +127,7 @@ const AdminHeader = ({ title, onMenuClick }) => {
         </Menu>
       </div>
     </header>
+    </>
   );
 };
 

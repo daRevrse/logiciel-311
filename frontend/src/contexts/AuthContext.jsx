@@ -73,9 +73,9 @@ export const AuthProvider = ({ children }) => {
   /**
    * Connexion administrateur
    */
-  const loginAdmin = async (email, password) => {
+  const loginAdmin = async (email, password, municipalitySlug = null) => {
     try {
-      const data = await authService.loginAdmin(email, password);
+      const data = await authService.loginAdmin(email, password, municipalitySlug);
       setUser(data.user);
       setIsAuthenticated(true);
       return data;
@@ -112,6 +112,9 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    role: user?.role || null,
+    municipalityId: user?.municipalityId ?? user?.municipality_id ?? null,
+    municipality: user?.municipality || null,
     loginByFingerprint,
     requestSmsCode,
     verifyCode,

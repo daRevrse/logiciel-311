@@ -233,13 +233,18 @@ class AuthService {
    * @param {string} password
    * @returns {Promise<Object>}
    */
-  async loginAdmin(email, password) {
+  async loginAdmin(email, password, expectedMunicipalitySlug = null) {
     try {
       const user = await User.findOne({
         where: {
           email: email,
           role: ['admin', 'super_admin']
-        }
+        },
+        include: [{
+          model: Municipality,
+          as: 'municipality',
+          attributes: ['id', 'name', 'slug', 'logo_url', 'region', 'settings']
+        }]
       });
 
       if (!user) {
@@ -259,6 +264,14 @@ class AuthService {
         throw new Error('Email ou mot de passe invalide');
       }
 
+      // Si la connexion se fait via un lien mairie-spécifique, vérifier
+      // que l'admin appartient bien à cette mairie (super_admin exempté).
+      if (expectedMunicipalitySlug && user.role !== 'super_admin') {
+        if (!user.municipality || user.municipality.slug !== expectedMunicipalitySlug) {
+          throw new Error('Accès refusé pour cette mairie');
+        }
+      }
+
       // Mettre à jour dernière connexion
       await user.updateLastLogin();
 
@@ -275,7 +288,15 @@ class AuthService {
           fullName: user.full_name,
           phone: user.phone,
           role: user.role,
-          municipalityId: user.municipality_id
+          municipalityId: user.municipality_id,
+          municipality: user.municipality ? {
+            id: user.municipality.id,
+            name: user.municipality.name,
+            slug: user.municipality.slug,
+            logo_url: user.municipality.logo_url,
+            region: user.municipality.region,
+            settings: user.municipality.settings
+          } : null
         },
         token
       };

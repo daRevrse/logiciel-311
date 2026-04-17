@@ -236,6 +236,19 @@ exports.sendTestNotification = async (req, res) => {
 
     const { type, reportId } = req.body;
 
+    // Scope tenancy : un admin mairie ne peut tester que sur un signalement de sa mairie.
+    // Super admin peut cibler n'importe quel signalement.
+    if (req.user.role !== 'super_admin' && reportId) {
+      const { Report } = require('../models');
+      const report = await Report.findByPk(reportId);
+      if (!report || report.municipality_id !== req.municipalityId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Signalement introuvable dans votre municipalité'
+        });
+      }
+    }
+
     let result;
 
     switch (type) {

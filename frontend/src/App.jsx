@@ -25,6 +25,7 @@ import ManageUsers from './pages/admin/ManageUsers';
 import ManageMunicipalities from './pages/admin/ManageMunicipalities';
 import ManageLicenses from './pages/admin/ManageLicenses';
 import ManageSuperAdmins from './pages/admin/ManageSuperAdmins';
+import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false }) => {
   const { isAuthenticated, isAdmin, isSuperAdmin, loading } = useAuth();
@@ -66,6 +67,7 @@ const CitizenLayout = ({ children }) => (
 // Mapping titre pages admin
 const adminTitles = {
   '/admin/dashboard':      'Tableau de bord',
+  '/admin/system':         'Vue globale système',
   '/admin/reports':        'Signalements Citoyens',
   '/admin/categories':     'Catégories',
   '/admin/users':          'Utilisateurs',
@@ -114,6 +116,7 @@ function App() {
         <Routes>
           <Route path="/login"       element={<Login />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/:municipalitySlug/admin/login" element={<AdminLogin />} />
           <Route path="/public-report" element={<Navigate to="/" replace />} />
 
           <Route path="/" element={<RootEntry />} />
@@ -127,6 +130,7 @@ function App() {
 
           {/* Routes admin */}
           <Route path="/admin/dashboard"      element={<ProtectedRoute adminOnly><AdminLayout><Dashboard /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/system"         element={<ProtectedRoute superAdminOnly><AdminLayout><SuperAdminDashboard /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/reports"        element={<ProtectedRoute adminOnly><AdminLayout><ManageReports /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/reports/:id"    element={<ProtectedRoute adminOnly><AdminLayout><ReportDetailAdmin /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/categories"     element={<ProtectedRoute adminOnly><AdminLayout><ManageCategories /></AdminLayout></ProtectedRoute>} />

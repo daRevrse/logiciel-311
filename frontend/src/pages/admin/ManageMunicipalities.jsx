@@ -199,6 +199,9 @@ const ManageMunicipalities = () => {
                         <div>
                           <div className="font-medium text-gray-900">{m.name}</div>
                           <div className="text-sm text-gray-500">{m.region}{m.country ? `, ${m.country}` : ''}</div>
+                          {m.slug && (
+                            <div className="text-[11px] text-primary font-mono mt-0.5">/{m.slug}/admin/login</div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -221,6 +224,21 @@ const ManageMunicipalities = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {m.slug && (
+                          <button
+                            title="Copier le lien d'accès administrateur"
+                            onClick={() => {
+                              const url = `${window.location.origin}/${m.slug}/admin/login`;
+                              navigator.clipboard.writeText(url).then(
+                                () => toast.success('Lien admin copié'),
+                                () => toast.error('Impossible de copier')
+                              );
+                            }}
+                            className="text-slate-600 hover:text-primary"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        )}
                         <button onClick={() => handleOpenModal(m)} className="text-blue-600 hover:text-blue-900">
                           <Edit className="h-4 w-4" />
                         </button>

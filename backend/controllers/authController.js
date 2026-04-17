@@ -138,7 +138,7 @@ class AuthController {
    */
   async loginAdmin(req, res) {
     try {
-      const { email, password } = req.body;
+      const { email, password, municipalitySlug } = req.body;
 
       // Validation
       if (!email || !password) {
@@ -148,7 +148,7 @@ class AuthController {
         });
       }
 
-      const result = await authService.loginAdmin(email, password);
+      const result = await authService.loginAdmin(email, password, municipalitySlug || null);
 
       res.json({
         success: true,

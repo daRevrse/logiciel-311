@@ -46,7 +46,8 @@
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e \"SELECT id, name FROM municipalities; SELECT id, email, municipality_id, role FROM users WHERE email='admin@lome.tg';\")",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e \"DESCRIBE municipalities;\")",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e \"DESCRIBE licenses; SELECT * FROM licenses;\")",
-      "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e ' *)"
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e ' *)",
+      "Bash(npm run *)"
     ]
   }
 }

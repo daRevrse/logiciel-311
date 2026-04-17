@@ -22,6 +22,17 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: { msg: 'Le nom de la commune est requis' }
       }
     },
+    slug: {
+      type: DataTypes.STRING(120),
+      allowNull: false,
+      unique: true,
+      validate: {
+        is: {
+          args: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+          msg: 'Slug invalide (minuscules, chiffres, tirets)'
+        }
+      }
+    },
     region: {
       type: DataTypes.STRING(100)
     },
@@ -80,7 +91,8 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true,
     indexes: [
       { fields: ['license_id'], unique: true },
-      { fields: ['name'] }
+      { fields: ['name'] },
+      { fields: ['slug'], unique: true }
     ]
   });
 

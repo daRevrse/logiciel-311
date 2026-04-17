@@ -77,15 +77,7 @@ const Dashboard = () => {
       });
       setRecentReports(reportsData.reports || reportsData.data || []);
 
-      // Si super admin, charger les données des municipalités
-      if (isSuperAdmin()) {
-        try {
-          const muniData = await adminService.getMunicipalities();
-          setMunicipalities(muniData.data || []);
-        } catch (err) {
-          console.error('Erreur chargement municipalités:', err);
-        }
-      }
+      // La vue super admin globale est sur /admin/system, plus de chargement cross-mairies ici.
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
       toast.error('Impossible de charger le tableau de bord');
@@ -136,13 +128,10 @@ const Dashboard = () => {
               {isSuperAdmin() ? 'Système Central' : 'Console Locale'}
             </div> */}
             <h1 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100 font-headline tracking-tight">
-              Tableau de bord {isSuperAdmin() && <span className="text-primary-600 block sm:inline">Super Admin</span>}
+              Tableau de bord
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-              {isSuperAdmin()
-                ? 'Gérez l\'ensemble des municipalités et surveillez les performances système.'
-                : 'Suivez les signalements de votre secteur et coordonnez les interventions.'
-              }
+              Suivez les signalements de votre secteur et coordonnez les interventions.
             </p>
           </div>
 
@@ -166,18 +155,18 @@ const Dashboard = () => {
             {isSuperAdmin() && (
               <Button
                 variant="primary"
-                onClick={() => navigate('/admin/municipalities')}
+                onClick={() => navigate('/admin/system')}
                 className="rounded-2xl shadow-lg shadow-primary/25 h-12 px-6"
               >
-                <Building2 className="h-4 w-4 mr-2" />
-                Municipalités
+                <Shield className="h-4 w-4 mr-2" />
+                Vue globale
               </Button>
             )}
           </div>
         </div>
 
-        {/* Super Admin - Statistiques système */}
-        {isSuperAdmin() && municipalities.length > 0 && (
+        {/* Super Admin - Statistiques système (désactivé, maintenant sur /admin/system) */}
+        {false && isSuperAdmin() && municipalities.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between">

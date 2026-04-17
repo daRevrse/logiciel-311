@@ -9,6 +9,17 @@ const adminService = {
    * @param {Object} filters - Filtres optionnels (dateFrom, dateTo)
    * @returns {Promise<Object>} Statistiques du dashboard
    */
+  async getGlobalStats() {
+    const response = await api.get('/admin/global/stats');
+    return response.data;
+  },
+
+  async getGlobalReports(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const response = await api.get(`/admin/global/reports${qs ? `?${qs}` : ''}`);
+    return response.data;
+  },
+
   async getDashboard(filters = {}) {
     const params = new URLSearchParams();
     if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);

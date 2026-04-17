@@ -516,6 +516,7 @@ router.put(
   [
     param('id').isInt({ min: 1 }).withMessage('ID invalide'),
     body('name').optional().isLength({ min: 3, max: 100 }).withMessage('Nom entre 3 et 100 caractères'),
+    body('slug').optional().matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).withMessage('Slug invalide (minuscules, chiffres, tirets)'),
     body('region').optional().isLength({ min: 2, max: 100 }).withMessage('Région entre 2 et 100 caractères'),
     body('country').optional().isLength({ min: 2, max: 100 }).withMessage('Pays entre 2 et 100 caractères'),
     body('contact_email').optional().isEmail().withMessage('Email invalide'),
@@ -555,6 +556,19 @@ router.post(
     ...validateLicenseData
   ],
   adminController.createMunicipalityLicense
+);
+
+// ============================================
+// ROUTES VUE GLOBALE (SUPER ADMIN)
+// ============================================
+
+router.get('/global/stats', authenticateToken, requireSuperAdmin, adminController.getGlobalStats);
+router.get(
+  '/global/reports',
+  authenticateToken,
+  requireSuperAdmin,
+  validatePagination,
+  adminController.getGlobalReports
 );
 
 // ============================================
