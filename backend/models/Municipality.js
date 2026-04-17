@@ -65,6 +65,73 @@ module.exports = (sequelize, DataTypes) => {
     address: {
       type: DataTypes.TEXT
     },
+    banner_url: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      field: 'banner_url',
+      validate: {
+        isUrl: { msg: 'URL de la bannière invalide' }
+      }
+    },
+    primary_color: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      defaultValue: '#1E40AF',
+      field: 'primary_color',
+      validate: {
+        is: {
+          args: /^#[0-9A-Fa-f]{6}$/,
+          msg: 'Couleur primaire invalide (format attendu #RRGGBB)'
+        }
+      }
+    },
+    secondary_color: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      defaultValue: '#64748B',
+      field: 'secondary_color',
+      validate: {
+        is: {
+          args: /^#[0-9A-Fa-f]{6}$/,
+          msg: 'Couleur secondaire invalide (format attendu #RRGGBB)'
+        }
+      }
+    },
+    display_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'display_name'
+    },
+    public_description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'public_description'
+    },
+    phone: {
+      type: DataTypes.STRING(30),
+      allowNull: true
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isEmail: { msg: 'Email invalide' }
+      }
+    },
+    public_hours: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: 'public_hours'
+    },
+    priority_support_threshold: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 10,
+      field: 'priority_support_threshold',
+      validate: {
+        min: { args: [1], msg: 'Le seuil doit être au moins 1' }
+      }
+    },
     settings: {
       type: DataTypes.JSON,
       defaultValue: {
