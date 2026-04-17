@@ -409,6 +409,8 @@ router.delete(
 // ROUTES SETTINGS MUNICIPALITÉ (ADMIN SCOPE)
 // ============================================
 
+const { logoUpload, bannerUpload } = require('../middlewares/uploadMunicipalityImage');
+
 /**
  * Validation des settings municipalité (tous champs optionnels en PATCH).
  */
@@ -458,6 +460,36 @@ router.patch(
   logActivity('update_municipality_settings'),
   validateMunicipalitySettings,
   adminController.updateMunicipalitySettings
+);
+
+/**
+ * @route   POST /api/admin/municipality/upload-logo
+ * @desc    Upload du logo de la municipalité (png/jpg/jpeg/svg, 2 MB max)
+ * @access  Private (Admin)
+ */
+router.post(
+  '/municipality/upload-logo',
+  authenticateToken,
+  requireAdmin,
+  validateLicense,
+  logActivity('upload_municipality_logo'),
+  logoUpload.single('logo'),
+  adminController.uploadLogo
+);
+
+/**
+ * @route   POST /api/admin/municipality/upload-banner
+ * @desc    Upload du banner de la municipalité (png/jpg/jpeg/svg, 5 MB max)
+ * @access  Private (Admin)
+ */
+router.post(
+  '/municipality/upload-banner',
+  authenticateToken,
+  requireAdmin,
+  validateLicense,
+  logActivity('upload_municipality_banner'),
+  bannerUpload.single('banner'),
+  adminController.uploadBanner
 );
 
 // ============================================

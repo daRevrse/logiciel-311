@@ -24,6 +24,8 @@ const adminService = require('../services/adminService');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
 const { Category, User, Municipality } = require('../models');
+const path = require('path');
+const fs = require('fs');
 
 /**
  * Champs autorisés pour la mise à jour des settings municipalité (admin)
@@ -1357,5 +1359,91 @@ exports.updateMunicipalitySettings = async (req, res) => {
   } catch (error) {
     logger.error(`Erreur updateMunicipalitySettings: ${error.message}`, { error });
     res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
+/**
+ * Helper interne : supprime tous les fichiers existants `logo.*` ou `banner.*`
+ * sauf celui qu'on vient d'écrire.
+ */
+function cleanupPreviousBrandingFiles(dir, prefix, keepFilename) {
+  try {
+    if (!fs.existsSync(dir)) return;
+    const files = fs.readdirSync(dir);
+    for (const f of files) {
+      if (f === keepFilename) continue;
+      if (f.startsWith(prefix + '.')) {
+        try {
+          fs.unlinkSync(path.join(dir, f));
+        } catch (e) {
+          logger.warn(`Impossible de supprimer ancien fichier ${f}: ${e.message}`);
+        }
+      }
+    }
+  } catch (e) {
+    logger.warn(`cleanupPreviousBrandingFiles: ${e.message}`);
+  }
+}
+
+/**
+ * POST /api/admin/municipality/upload-logo
+ * Multer middleware (logoUpload.single('logo')) écrit le fichier ; ici on met à jour
+ * l'URL et on nettoie les anciens fichiers.
+ */
+exports.uploadLogo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Fichier logo requis (champ "logo")' });
+    }
+    const municipalityId = req.municipalityId;
+    const municipality = await Municipality.findByPk(municipalityId);
+    if (!municipality) {
+      return res.status(404).json({ success: false, message: 'Municipalité introuvable' });
+    }
+
+    const ext = path.extname(req.file.filename); // ex: .png
+    const filename = `logo${ext}`;
+    const dir = path.join(__dirname, '..', 'uploads', 'municipalities', String(municipalityId));
+
+    // Nettoyer les anciens logo.* (extension différente)
+    cleanupPreviousBrandingFiles(dir, 'logo', filename);
+
+    const url = `/uploads/municipalities/${municipalityId}/${filename}`;
+    await municipality.update({ logo_url: url });
+
+    res.json({ success: true, data: { url } });
+  } catch (error) {
+    logger.error(`Erreur uploadLogo: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur lors de l\'upload du logo' });
+  }
+};
+
+/**
+ * POST /api/admin/municipality/upload-banner
+ */
+exports.uploadBanner = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Fichier banner requis (champ "banner")' });
+    }
+    const municipalityId = req.municipalityId;
+    const municipality = await Municipality.findByPk(municipalityId);
+    if (!municipality) {
+      return res.status(404).json({ success: false, message: 'Municipalité introuvable' });
+    }
+
+    const ext = path.extname(req.file.filename);
+    const filename = `banner${ext}`;
+    const dir = path.join(__dirname, '..', 'uploads', 'municipalities', String(municipalityId));
+
+    cleanupPreviousBrandingFiles(dir, 'banner', filename);
+
+    const url = `/uploads/municipalities/${municipalityId}/${filename}`;
+    await municipality.update({ banner_url: url });
+
+    res.json({ success: true, data: { url } });
+  } catch (error) {
+    logger.error(`Erreur uploadBanner: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur serveur lors de l\'upload du banner' });
   }
 };
