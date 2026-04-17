@@ -3,9 +3,12 @@
 /**
  * Extend municipalities table with branding and public page fields.
  *
- * Note: `logo_url` and `address` already exist on the `municipalities`
- * table (added in 20250101000002-create-municipalities.js) and are
- * therefore not re-added here. The model still declares them.
+ * Note: `logo_url`, `address`, `contact_phone` and `contact_email`
+ * already exist on the `municipalities` table (added in
+ * 20250101000002-create-municipalities.js) and are therefore not
+ * re-added here. The model still declares them, and contact info is
+ * consolidated on the pre-existing `contact_phone` / `contact_email`
+ * columns (no separate `phone` / `email`).
  */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -36,16 +39,6 @@ module.exports = {
       allowNull: true
     });
 
-    await queryInterface.addColumn('municipalities', 'phone', {
-      type: Sequelize.STRING(30),
-      allowNull: true
-    });
-
-    await queryInterface.addColumn('municipalities', 'email', {
-      type: Sequelize.STRING(255),
-      allowNull: true
-    });
-
     await queryInterface.addColumn('municipalities', 'public_hours', {
       type: Sequelize.JSON,
       allowNull: true
@@ -61,8 +54,6 @@ module.exports = {
   async down(queryInterface) {
     await queryInterface.removeColumn('municipalities', 'priority_support_threshold');
     await queryInterface.removeColumn('municipalities', 'public_hours');
-    await queryInterface.removeColumn('municipalities', 'email');
-    await queryInterface.removeColumn('municipalities', 'phone');
     await queryInterface.removeColumn('municipalities', 'public_description');
     await queryInterface.removeColumn('municipalities', 'display_name');
     await queryInterface.removeColumn('municipalities', 'secondary_color');

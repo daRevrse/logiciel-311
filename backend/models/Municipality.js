@@ -107,17 +107,13 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       field: 'public_description'
     },
-    phone: {
-      type: DataTypes.STRING(30),
-      allowNull: true
-    },
-    email: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      validate: {
-        isEmail: { msg: 'Email invalide' }
-      }
-    },
+    /**
+     * Opening hours for the public page.
+     * Shape: object keyed by `monday`..`sunday`, each value either
+     *   { open: "HH:MM", close: "HH:MM" }
+     * or
+     *   { closed: true }
+     */
     public_hours: {
       type: DataTypes.JSON,
       allowNull: true,
