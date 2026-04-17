@@ -15,16 +15,16 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     old_status: {
-      type: DataTypes.ENUM('pending', 'in_progress', 'resolved', 'rejected'),
+      type: DataTypes.ENUM('pending', 'assigned', 'in_progress', 'resolved', 'rejected'),
       field: 'old_status'
     },
     new_status: {
-      type: DataTypes.ENUM('pending', 'in_progress', 'resolved', 'rejected'),
+      type: DataTypes.ENUM('pending', 'assigned', 'in_progress', 'resolved', 'rejected'),
       allowNull: false,
       field: 'new_status',
       validate: {
         isIn: {
-          args: [['pending', 'in_progress', 'resolved', 'rejected']],
+          args: [['pending', 'assigned', 'in_progress', 'resolved', 'rejected']],
           msg: 'Statut invalide'
         }
       }

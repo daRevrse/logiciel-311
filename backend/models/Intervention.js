@@ -77,5 +77,21 @@ module.exports = (sequelize, DataTypes) => {
     ]
   });
 
+  // ============================================
+  // HOOKS
+  // ============================================
+  // Après création/mise à jour : recalculer le statut du rapport parent.
+  // Pas de boucle infinie : les hooks sont sur Intervention, pas sur Report
+  // (le service ne modifie que Report).
+  const { deriveReportStatus } = require('../services/reportStatusService');
+
+  Intervention.afterCreate(async (intervention) => {
+    await deriveReportStatus(intervention.report_id);
+  });
+
+  Intervention.afterUpdate(async (intervention) => {
+    await deriveReportStatus(intervention.report_id);
+  });
+
   return Intervention;
 };

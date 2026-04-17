@@ -82,11 +82,11 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     status: {
-      type: DataTypes.ENUM('pending', 'in_progress', 'resolved', 'rejected'),
+      type: DataTypes.ENUM('pending', 'assigned', 'in_progress', 'resolved', 'rejected'),
       defaultValue: 'pending',
       validate: {
         isIn: {
-          args: [['pending', 'in_progress', 'resolved', 'rejected']],
+          args: [['pending', 'assigned', 'in_progress', 'resolved', 'rejected']],
           msg: 'Statut invalide'
         }
       }
