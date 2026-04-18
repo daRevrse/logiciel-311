@@ -348,6 +348,38 @@ const adminService = {
   async createSuperAdmin(data) {
     const response = await api.post('/admin/super-admins', data);
     return response.data;
+  },
+
+  // ============================================
+  // PARAMÈTRES DE LA MUNICIPALITÉ (ADMIN)
+  // ============================================
+
+  async getMunicipalitySettings() {
+    const response = await api.get('/admin/municipality/settings');
+    return response.data;
+  },
+
+  async updateMunicipalitySettings(payload) {
+    const response = await api.patch('/admin/municipality/settings', payload);
+    return response.data;
+  },
+
+  async uploadMunicipalityLogo(file) {
+    const formData = new FormData();
+    formData.append('logo', file);
+    const response = await api.post('/admin/municipality/upload-logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  async uploadMunicipalityBanner(file) {
+    const formData = new FormData();
+    formData.append('banner', file);
+    const response = await api.post('/admin/municipality/upload-banner', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
   }
 };
 

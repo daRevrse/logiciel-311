@@ -11,6 +11,7 @@ const baseNavItems = [
   { label: 'Signalements',    icon: AlertCircle,     to: '/admin/reports' },
   { label: 'Catégories',      icon: Tag,             to: '/admin/categories' },
   { label: 'Utilisateurs',    icon: Users,           to: '/admin/users' },
+  { label: 'Paramètres',      icon: Settings,        to: '/admin/municipality/settings' },
 ];
 
 const superAdminNavItems = [
