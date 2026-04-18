@@ -11,8 +11,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Wrench
 } from 'lucide-react';
+import AssignInterventionModal from '../../components/admin/AssignInterventionModal';
 import {
   Button,
   Card,
@@ -47,6 +49,9 @@ const ReportDetailAdmin = () => {
   // États pour ajout de note
   const [newNote, setNewNote] = useState('');
   const [addingNote, setAddingNote] = useState(false);
+
+  // Modal création d'intervention
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   // Charger le signalement
   useEffect(() => {
@@ -374,6 +379,11 @@ const ReportDetailAdmin = () => {
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Ajouter une note
                 </Button>
+
+                <Button variant="primary" fullWidth onClick={() => setAssignModalOpen(true)} className="mt-2">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  Créer intervention
+                </Button>
               </div>
             </Card>
 
@@ -493,6 +503,16 @@ const ReportDetailAdmin = () => {
           </div>
         </div>
       </Modal>
+
+      <AssignInterventionModal
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        reportId={report.id}
+        onCreated={() => {
+          loadReport();
+          loadHistory();
+        }}
+      />
     </div>
   );
 };

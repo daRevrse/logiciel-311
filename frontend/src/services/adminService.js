@@ -405,6 +405,41 @@ const adminService = {
     return response.data;
   },
 
+  // ============================================
+  // INTERVENTIONS (ADMIN)
+  // ============================================
+
+  async listInterventions(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.status) qs.append('status', params.status);
+    if (params.agent_id) qs.append('agent_id', params.agent_id);
+    if (params.category_id) qs.append('category_id', params.category_id);
+    if (params.page) qs.append('page', params.page);
+    if (params.limit) qs.append('limit', params.limit);
+    const response = await api.get(`/admin/interventions${qs.toString() ? `?${qs.toString()}` : ''}`);
+    return response.data;
+  },
+
+  async getIntervention(id) {
+    const response = await api.get(`/admin/interventions/${id}`);
+    return response.data;
+  },
+
+  async createIntervention(payload) {
+    const response = await api.post('/admin/interventions', payload);
+    return response.data;
+  },
+
+  async updateIntervention(id, payload) {
+    const response = await api.patch(`/admin/interventions/${id}`, payload);
+    return response.data;
+  },
+
+  async suggestAgents(reportId) {
+    const response = await api.get(`/admin/agents/suggest?report_id=${reportId}`);
+    return response.data;
+  },
+
   async uploadMunicipalityBanner(file) {
     const formData = new FormData();
     formData.append('banner', file);

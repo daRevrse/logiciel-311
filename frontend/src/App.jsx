@@ -29,6 +29,7 @@ import ManageSuperAdmins from './pages/admin/ManageSuperAdmins';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 import MunicipalitySettings from './pages/admin/MunicipalitySettings';
 import AgentsList from './pages/admin/AgentsList';
+import InterventionsList from './pages/admin/InterventionsList';
 
 // Pages agent
 import AgentHome from './pages/agent/AgentHome';
@@ -82,6 +83,7 @@ const adminTitles = {
   '/admin/categories':     'Catégories',
   '/admin/users':          'Utilisateurs',
   '/admin/agents':         'Agents',
+  '/admin/interventions':  'Interventions',
   '/admin/municipalities': 'Municipalités',
   '/admin/licenses':       'Licences',
   '/admin/super-admins':   'Super administrateurs',
@@ -148,6 +150,7 @@ function App() {
           <Route path="/admin/categories"     element={<ProtectedRoute adminOnly><AdminLayout><ManageCategories /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/users"          element={<ProtectedRoute adminOnly><AdminLayout><ManageUsers /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/agents"         element={<ProtectedRoute adminOnly><AdminLayout><AgentsList /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/interventions"  element={<ProtectedRoute adminOnly><AdminLayout><InterventionsList /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/municipality/settings" element={<ProtectedRoute adminOnly><AdminLayout><MunicipalitySettings /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/municipalities" element={<ProtectedRoute superAdminOnly><AdminLayout><ManageMunicipalities /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/licenses"       element={<ProtectedRoute superAdminOnly><AdminLayout><ManageLicenses /></AdminLayout></ProtectedRoute>} />

@@ -12,6 +12,7 @@ const baseNavItems = [
   { label: 'Catégories',      icon: Tag,             to: '/admin/categories' },
   { label: 'Utilisateurs',    icon: Users,           to: '/admin/users' },
   { label: 'Agents',          icon: Users,           to: '/admin/agents' },
+  { label: 'Interventions',   icon: Wrench,          to: '/admin/interventions' },
   { label: 'Paramètres',      icon: Settings,        to: '/admin/municipality/settings' },
 ];
 
