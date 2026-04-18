@@ -373,6 +373,38 @@ const adminService = {
     return response.data;
   },
 
+  // ============================================
+  // GESTION DES AGENTS (ADMIN)
+  // ============================================
+
+  async listAgents(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.page) qs.append('page', params.page);
+    if (params.limit) qs.append('limit', params.limit);
+    const response = await api.get(`/admin/agents${qs.toString() ? `?${qs.toString()}` : ''}`);
+    return response.data;
+  },
+
+  async createAgent(payload) {
+    const response = await api.post('/admin/agents', payload);
+    return response.data;
+  },
+
+  async updateAgent(id, payload) {
+    const response = await api.patch(`/admin/agents/${id}`, payload);
+    return response.data;
+  },
+
+  async deleteAgent(id) {
+    const response = await api.delete(`/admin/agents/${id}`);
+    return response.data;
+  },
+
+  async listAdminCategories() {
+    const response = await api.get('/admin/categories');
+    return response.data;
+  },
+
   async uploadMunicipalityBanner(file) {
     const formData = new FormData();
     formData.append('banner', file);
