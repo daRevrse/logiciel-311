@@ -31,6 +31,18 @@ const AGENT_ATTRIBUTES = [
 ];
 
 /**
+ * Échappe les caractères HTML sensibles pour interpolation sûre dans un body HTML.
+ */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Génère un mot de passe temporaire (16 chars, alphanum URL-safe).
  */
 function generateTempPassword() {
@@ -207,7 +219,14 @@ exports.createAgent = async (req, res) => {
       is_active: true
     });
     await agent.setPassword(tempPassword);
-    await agent.save();
+    try {
+      await agent.save();
+    } catch (saveErr) {
+      if (saveErr && saveErr.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json({ success: false, message: 'Email déjà utilisé' });
+      }
+      throw saveErr;
+    }
 
     logger.info(`Agent créé: ${agent.full_name} (id=${agent.id}) municipalité=${municipalityId}`);
 
@@ -216,10 +235,10 @@ exports.createAgent = async (req, res) => {
       to: email,
       subject: 'Invitation à rejoindre la plateforme (agent)',
       text: `Bonjour ${full_name},\n\nUn compte agent a été créé pour vous.\nEmail: ${email}\nMot de passe temporaire: ${tempPassword}\n\nMerci de le changer dès votre première connexion.`,
-      html: `<p>Bonjour <strong>${full_name}</strong>,</p>
+      html: `<p>Bonjour <strong>${escapeHtml(full_name)}</strong>,</p>
 <p>Un compte agent a été créé pour vous.</p>
 <ul>
-  <li>Email: <strong>${email}</strong></li>
+  <li>Email: <strong>${escapeHtml(email)}</strong></li>
   <li>Mot de passe temporaire: <code>${tempPassword}</code></li>
 </ul>
 <p>Merci de le changer dès votre première connexion.</p>`
@@ -239,9 +258,13 @@ exports.createAgent = async (req, res) => {
     // n'a pas pu être envoyé (SMTP non configuré), on retourne le mot de
     // passe temporaire pour ne pas bloquer le dev/onboarding.
     if (!mailResult.sent) {
-      response.temp_password = tempPassword;
-      response.mail_warning = `Email non envoyé (${mailResult.reason}). Mot de passe temporaire retourné pour usage manuel.`;
       logger.warn(`[agents] invitation non envoyée à ${email}: ${mailResult.reason}`);
+      if (process.env.NODE_ENV !== 'production') {
+        response.temp_password = tempPassword;
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Mot de passe temporaire retourné pour usage manuel.`;
+      } else {
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Veuillez déclencher une réinitialisation de mot de passe pour cet agent.`;
+      }
     }
 
     res.status(201).json(response);
