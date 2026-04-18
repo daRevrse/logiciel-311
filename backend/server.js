@@ -81,6 +81,7 @@ const authRoutes = require('./routes/auth.routes');
 const reportRoutes = require('./routes/report.routes');
 const supportRoutes = require('./routes/support.routes');
 const adminRoutes = require('./routes/admin.routes');
+const agentAdminRoutes = require('./routes/agent-admin.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const publicRoutes = require('./routes/public.routes');
 
@@ -90,6 +91,7 @@ app.use('/api/licenses', licenseRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api', supportRoutes);
+app.use('/api/admin/agents', agentAdminRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 
