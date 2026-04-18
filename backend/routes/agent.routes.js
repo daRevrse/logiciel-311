@@ -13,6 +13,8 @@ const { body, param, query } = require('express-validator');
 const { authenticateToken } = require('../middlewares/auth');
 const { validateLicense } = require('../middlewares/license');
 const { logActivity } = require('../middlewares/requestLogger');
+const { handleMulterErrors } = require('../middlewares/uploadMunicipalityImage');
+const uploadService = require('../services/uploadService');
 
 const agentController = require('../controllers/agentController');
 
@@ -51,12 +53,28 @@ router.get(
   agentController.listMyInterventions
 );
 
+router.get(
+  '/interventions/:id',
+  ...commonGuards,
+  validateId,
+  agentController.getMyIntervention
+);
+
 router.patch(
   '/interventions/:id',
   ...commonGuards,
   logActivity('update_my_intervention'),
   [...validateId, ...validateUpdate],
   agentController.updateMyIntervention
+);
+
+router.post(
+  '/interventions/:id/photos',
+  ...commonGuards,
+  logActivity('upload_intervention_photo'),
+  validateId,
+  handleMulterErrors(uploadService.single('photo')),
+  agentController.uploadInterventionPhoto
 );
 
 module.exports = router;
