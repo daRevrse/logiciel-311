@@ -181,17 +181,31 @@ const PublicReport = () => {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {municipalities.map((muni) => (
-                <button
+                <div
                   key={muni.id}
-                  onClick={() => handleMunicipalitySelect(muni)}
-                  className="group bg-white rounded-card shadow-card hover:shadow-card-hover border border-transparent hover:border-primary-200 transition-all p-6 text-left"
+                  className="group bg-white rounded-card shadow-card hover:shadow-card-hover border border-transparent hover:border-primary-200 transition-all p-6 text-left flex flex-col"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center mb-4 text-primary-600">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <p className="font-semibold text-gray-900">{muni.name}</p>
-                  <p className="text-xs text-muted mt-1">{muni.code}</p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMunicipalitySelect(muni)}
+                    className="text-left"
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center mb-4 text-primary-600">
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <p className="font-semibold text-gray-900">{muni.name}</p>
+                    <p className="text-xs text-muted mt-1">{muni.code}</p>
+                  </button>
+                  {muni.slug && (
+                    <Link
+                      to={`/m/${muni.slug}`}
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
+                    >
+                      Voir la page de la mairie
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  )}
+                </div>
               ))}
             </div>
 

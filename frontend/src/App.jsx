@@ -16,6 +16,9 @@ import ReportDetail from './pages/citizen/ReportDetail';
 import MyReports from './pages/citizen/MyReports';
 import PublicReport from './pages/citizen/PublicReport';
 
+// Pages publiques (non authentifiées)
+import MunicipalityPublicPage from './pages/public/MunicipalityPublicPage';
+
 // Pages admin
 import AdminLogin from './pages/admin/AdminLogin';
 import Dashboard from './pages/admin/Dashboard';
@@ -132,6 +135,7 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/:municipalitySlug/admin/login" element={<AdminLogin />} />
           <Route path="/public-report" element={<Navigate to="/" replace />} />
+          <Route path="/m/:slug" element={<MunicipalityPublicPage />} />
 
           <Route path="/" element={<RootEntry />} />
 
