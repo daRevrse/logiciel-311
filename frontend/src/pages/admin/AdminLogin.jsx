@@ -12,7 +12,7 @@ import api from '../../services/api';
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { municipalitySlug } = useParams();
-  const { loginAdmin, isAuthenticated, isAdmin } = useAuth();
+  const { loginAdmin, isAuthenticated, isAdmin, isAgent } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -38,10 +38,12 @@ const AdminLogin = () => {
 
   // Si déjà authentifié en tant qu'admin, rediriger vers le dashboard
   useEffect(() => {
-    if (isAuthenticated && isAdmin()) {
+    if (isAuthenticated && isAgent()) {
+      navigate('/agent');
+    } else if (isAuthenticated && isAdmin()) {
       navigate('/admin/dashboard');
     }
-  }, [isAuthenticated, isAdmin, navigate]);
+  }, [isAuthenticated, isAdmin, isAgent, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +55,11 @@ const AdminLogin = () => {
       const response = await loginAdmin(formData.email, formData.password, municipalitySlug || null);
       console.log('Connexion réussie:', response);
       toast.success('Accès autorisé ! Bienvenue dans la console.');
-      navigate('/admin/dashboard');
+      if (response?.user?.role === 'agent') {
+        navigate('/agent');
+      } else {
+        navigate('/admin/dashboard');
+      }
     } catch (err) {
       console.error('Erreur connexion admin:', err);
       // Extraire le message d'erreur précis du backend

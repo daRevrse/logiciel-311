@@ -108,6 +108,13 @@ export const AuthProvider = ({ children }) => {
     return authService.isSuperAdmin();
   };
 
+  /**
+   * Vérifier si l'utilisateur est un agent terrain
+   */
+  const isAgent = () => {
+    return authService.isAgent();
+  };
+
   const value = {
     user,
     loading,
@@ -121,7 +128,8 @@ export const AuthProvider = ({ children }) => {
     loginAdmin,
     logout,
     isAdmin,
-    isSuperAdmin
+    isSuperAdmin,
+    isAgent
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

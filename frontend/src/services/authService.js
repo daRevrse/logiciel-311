@@ -143,6 +143,15 @@ const authService = {
   isSuperAdmin() {
     const user = this.getCurrentUser();
     return user && user.role === 'super_admin';
+  },
+
+  /**
+   * Vérifier si l'utilisateur est un agent terrain
+   * @returns {boolean} True si agent
+   */
+  isAgent() {
+    const user = this.getCurrentUser();
+    return user && user.role === 'agent';
   }
 };
 

@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Navbar, LoadingScreen } from './components/common';
 import Sidebar from './components/admin/Sidebar';
 import AdminHeader from './components/admin/AdminHeader';
+import AgentLayout from './layouts/AgentLayout';
 
 // Pages citoyennes
 import Login from './pages/citizen/Login';
@@ -27,8 +28,11 @@ import ManageLicenses from './pages/admin/ManageLicenses';
 import ManageSuperAdmins from './pages/admin/ManageSuperAdmins';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 
-const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false }) => {
-  const { isAuthenticated, isAdmin, isSuperAdmin, loading } = useAuth();
+// Pages agent
+import AgentHome from './pages/agent/AgentHome';
+
+const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, agentOnly = false }) => {
+  const { isAuthenticated, isAdmin, isSuperAdmin, isAgent, loading } = useAuth();
   const location = useLocation();
 
   if (loading) return <LoadingScreen />;
@@ -40,12 +44,14 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false })
 
   if (superAdminOnly && !isSuperAdmin()) return <Navigate to="/" replace />;
   if (adminOnly && !isAdmin()) return <Navigate to="/" replace />;
+  if (agentOnly && !isAgent()) return <Navigate to="/" replace />;
 
   return children;
 };
 
 const RoleBasedRedirect = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAgent } = useAuth();
+  if (isAgent()) return <Navigate to="/agent" replace />;
   return isAdmin() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />;
 };
 
@@ -138,6 +144,9 @@ function App() {
           <Route path="/admin/municipalities" element={<ProtectedRoute superAdminOnly><AdminLayout><ManageMunicipalities /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/licenses"       element={<ProtectedRoute superAdminOnly><AdminLayout><ManageLicenses /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/super-admins"   element={<ProtectedRoute superAdminOnly><AdminLayout><ManageSuperAdmins /></AdminLayout></ProtectedRoute>} />
+
+          {/* Routes agent */}
+          <Route path="/agent" element={<ProtectedRoute agentOnly><AgentLayout><AgentHome /></AgentLayout></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
