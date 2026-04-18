@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { Municipality } = require('../models');
+const publicController = require('../controllers/publicController');
+
+/**
+ * @route GET /api/public/municipalities/:slug
+ * @desc Payload complet de la page publique d'une mairie (branding, catégories, stats, derniers signalements)
+ * @access Public
+ */
+router.get('/municipalities/:slug', publicController.getMunicipalityPublicPage);
 
 /**
  * @route GET /api/public/municipalities/by-slug/:slug
