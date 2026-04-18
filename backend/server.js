@@ -85,6 +85,7 @@ const agentAdminRoutes = require('./routes/agent-admin.routes');
 const interventionRoutes = require('./routes/intervention.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const publicRoutes = require('./routes/public.routes');
+const agentRoutes = require('./routes/agent.routes');
 
 // Monter les routes
 app.use('/api/public', publicRoutes);
@@ -95,6 +96,7 @@ app.use('/api', supportRoutes);
 app.use('/api/admin/agents', agentAdminRoutes);
 app.use('/api/admin/interventions', interventionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/agent', agentRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // ============================================
