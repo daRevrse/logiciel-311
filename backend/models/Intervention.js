@@ -87,10 +87,32 @@ module.exports = (sequelize, DataTypes) => {
 
   Intervention.afterCreate(async (intervention) => {
     await deriveReportStatus(intervention.report_id);
+
+    // Notifications (ne doivent pas faire tomber le hook).
+    try {
+      const notifier = require('../services/interventionNotifier');
+      await notifier.notifyInterventionAssigned(intervention);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[Intervention.afterCreate] notifier error:', err && err.message);
+    }
   });
 
   Intervention.afterUpdate(async (intervention) => {
     await deriveReportStatus(intervention.report_id);
+
+    try {
+      const previousStatus = intervention._previousDataValues
+        ? intervention._previousDataValues.status
+        : null;
+      if (intervention.changed && intervention.changed('status') && previousStatus) {
+        const notifier = require('../services/interventionNotifier');
+        await notifier.notifyInterventionStatusChanged(intervention, previousStatus);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[Intervention.afterUpdate] notifier error:', err && err.message);
+    }
   });
 
   return Intervention;
