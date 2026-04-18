@@ -47,7 +47,12 @@
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e \"DESCRIBE municipalities;\")",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e \"DESCRIBE licenses; SELECT * FROM licenses;\")",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root logiciel_311_dev -e ' *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(cp backend/controllers/adminController.js /tmp/ctrl_b2.js)",
+      "Bash(cp backend/routes/admin.routes.js /tmp/routes_b2.js)",
+      "Bash(cp backend/middlewares/uploadMunicipalityImage.js /tmp/mw_b2.js)",
+      "Bash(head -n 1361 backend/controllers/adminController.js)",
+      "Bash(mv /tmp/ctrl_b1.js backend/controllers/adminController.js)"
     ]
   }
 }

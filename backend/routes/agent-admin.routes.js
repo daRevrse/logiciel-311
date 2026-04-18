@@ -20,6 +20,7 @@ const { validateLicense } = require('../middlewares/license');
 const { logActivity } = require('../middlewares/requestLogger');
 
 const agentAdminController = require('../controllers/agentAdminController');
+const interventionController = require('../controllers/interventionController');
 
 /**
  * Guard : requiert que req.municipalityId soit défini. Aligne avec le pattern
@@ -98,6 +99,18 @@ const validateUpdateAgent = [
     .isInt({ min: 1 })
     .withMessage('specializations doit contenir des IDs entiers positifs')
 ];
+
+/**
+ * @route  GET /api/admin/agents/suggest?report_id=
+ * @desc   Suggère les agents spécialisés pour un signalement, triés par charge.
+ *         Placé AVANT `/:id` / `/` pour éviter toute collision de routage.
+ */
+router.get(
+  '/suggest',
+  ...commonGuards,
+  [query('report_id').isInt({ min: 1 }).withMessage('report_id requis')],
+  interventionController.suggestAgents
+);
 
 /**
  * @route  GET /api/admin/agents
