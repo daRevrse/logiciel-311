@@ -31,6 +31,7 @@ import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 // Pages agent
 import AgentHome from './pages/agent/AgentHome';
 import MyInterventions from './pages/agent/MyInterventions';
+import InterventionDetail from './pages/agent/InterventionDetail';
 
 const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, agentOnly = false }) => {
   const { isAuthenticated, isAdmin, isSuperAdmin, isAgent, loading } = useAuth();
@@ -148,6 +149,7 @@ function App() {
 
           {/* Routes agent */}
           <Route path="/agent" element={<ProtectedRoute agentOnly><AgentLayout><MyInterventions /></AgentLayout></ProtectedRoute>} />
+          <Route path="/agent/interventions/:id" element={<ProtectedRoute agentOnly><AgentLayout><InterventionDetail /></AgentLayout></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
