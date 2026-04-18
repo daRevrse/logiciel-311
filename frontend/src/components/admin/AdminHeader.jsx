@@ -3,6 +3,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { LogOut, User, Menu as MenuIcon, Search, SlidersHorizontal, ShieldCheck, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { resolveImageUrl } from '../../utils/url';
 
 const AdminHeader = ({ title, onMenuClick }) => {
   const { user, logout, isSuperAdmin, municipality } = useAuth();
@@ -10,6 +11,10 @@ const AdminHeader = ({ title, onMenuClick }) => {
   const [searchValue, setSearchValue] = useState('');
 
   const superAdmin = isSuperAdmin && isSuperAdmin();
+
+  const license = municipality?.license;
+  const isLicenseExpired = license?.expires_at ? new Date(license.expires_at) < new Date() : false;
+  const isLicenseInactive = license?.is_active === false || isLicenseExpired;
 
   const handleLogout = () => {
     logout();
@@ -22,7 +27,16 @@ const AdminHeader = ({ title, onMenuClick }) => {
 
   return (
     <>
+    {/* Bandeau d'alerte Licence Inactive */}
+    {isLicenseInactive && !superAdmin && (
+      <div className="w-full bg-red-600 text-white px-4 py-2 text-sm font-bold flex items-center justify-center gap-2 animate-pulse z-50">
+        <ShieldCheck className="h-4 w-4" />
+        <span>ATTENTION : Votre licence est actuellement {isLicenseExpired ? 'expirée' : 'inactive'}. Certaines fonctionnalités peuvent être limitées.</span>
+      </div>
+    )}
+
     {/* Bandeau contextuel : Super admin vs Admin mairie */}
+    
     <div className={`sticky top-0 z-40 w-full px-4 lg:px-8 py-1.5 text-xs font-bold flex items-center gap-2 ${
       superAdmin
         ? 'bg-slate-900 text-amber-300 border-b border-slate-800'
@@ -36,7 +50,7 @@ const AdminHeader = ({ title, onMenuClick }) => {
       ) : (
         <>
           {municipality?.logo_url ? (
-            <img src={municipality.logo_url} alt="" className="h-4 w-4 rounded object-contain bg-white" />
+            <img src={resolveImageUrl(municipality.logo_url)} alt="" className="h-4 w-4 rounded object-contain bg-white" />
           ) : (
             <Building2 className="h-3.5 w-3.5" />
           )}

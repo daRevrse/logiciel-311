@@ -48,7 +48,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(500),
       field: 'logo_url',
       validate: {
-        isUrl: { msg: 'URL du logo invalide' }
+        is: {
+          args: [/^(https?:\/\/|\/|data:)/],
+          msg: 'URL du logo invalide'
+        }
       }
     },
     contact_email: {
@@ -70,7 +73,10 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       field: 'banner_url',
       validate: {
-        isUrl: { msg: 'URL de la bannière invalide' }
+        is: {
+          args: [/^(https?:\/\/|\/|data:)/],
+          msg: 'URL de la bannière invalide'
+        }
       }
     },
     primary_color: {

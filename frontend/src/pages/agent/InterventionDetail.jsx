@@ -12,6 +12,7 @@ import {
   Loader2
 } from 'lucide-react';
 import agentService from '../../services/agentService';
+import { resolveImageUrl } from '../../utils/url';
 
 const STATUS_LABELS = {
   pending: 'En attente',
@@ -215,13 +216,13 @@ const InterventionDetail = () => {
             {photos.map((p) => (
               <a
                 key={p.id}
-                href={p.photo_url}
+                href={resolveImageUrl(p.photo_url)}
                 target="_blank"
                 rel="noreferrer"
                 className="flex-shrink-0 block w-32 h-32 md:w-full md:h-32 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800"
               >
                 <img
-                  src={p.photo_url}
+                  src={resolveImageUrl(p.photo_url)}
                   alt=""
                   className="w-full h-full object-cover"
                 />

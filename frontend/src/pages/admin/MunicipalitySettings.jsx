@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Palette, Phone, Globe, Upload, Loader2, Save } from 'lucide-react';
 import adminService from '../../services/adminService';
+import { resolveImageUrl } from '../../utils/url';
 
 const DAYS = [
   { key: 'monday',    label: 'Lundi' },
@@ -264,7 +265,7 @@ const MunicipalitySettings = () => {
               <div className="flex items-center gap-4 flex-wrap">
                 <div className="w-24 h-24 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
                   {form.logo_url ? (
-                    <img src={form.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                    <img src={resolveImageUrl(form.logo_url)} alt="Logo" className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-xs text-slate-400">Aucun logo</span>
                   )}
@@ -284,7 +285,7 @@ const MunicipalitySettings = () => {
               <div className="space-y-3">
                 <div className="w-full aspect-[4/1] rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                   {form.banner_url ? (
-                    <img src={form.banner_url} alt="Bannière" className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(form.banner_url)} alt="Bannière" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xs text-slate-400">Aucune bannière</span>
                   )}

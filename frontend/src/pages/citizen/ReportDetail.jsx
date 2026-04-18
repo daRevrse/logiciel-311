@@ -5,6 +5,7 @@ import { useReports } from '../../hooks/useReports';
 import { useSupports } from '../../hooks/useSupports';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button, Card, StatusBadge, Spinner, Modal, ConfirmModal } from '../../components/common';
+import { resolveImageUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
 /**
@@ -188,7 +189,7 @@ const ReportDetail = () => {
                     className="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                   >
                     <img
-                      src={photo.photo_url}
+                      src={resolveImageUrl(photo.photo_url)}
                       alt={`Photo ${photo.id}`}
                       className="w-full h-full object-cover"
                     />
@@ -317,7 +318,7 @@ const ReportDetail = () => {
           {selectedPhoto && (
             <div className="flex items-center justify-center">
               <img
-                src={selectedPhoto.photo_url}
+                src={resolveImageUrl(selectedPhoto.photo_url)}
                 alt="Photo agrandie"
                 className="max-w-full max-h-[70vh] object-contain"
               />

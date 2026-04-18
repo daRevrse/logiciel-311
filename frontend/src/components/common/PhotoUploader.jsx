@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { resolveImageUrl } from '../../utils/url';
 import { Button } from './';
 
 /**
@@ -150,7 +151,7 @@ const PhotoUploader = ({ photos = [], onChange, maxPhotos = 5, maxSizeInMB = 5 }
             <div key={index} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <img
-                  src={photo.preview}
+                  src={resolveImageUrl(photo.preview)}
                   alt={photo.name}
                   className="w-full h-full object-cover"
                 />

@@ -5,6 +5,7 @@ import { Button } from '../../components/common';
 import { Mail, Lock, AlertCircle, ChevronRight, ShieldCheck, Globe, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { resolveImageUrl } from '../../utils/url';
 
 /**
  * Page de connexion administrateur premium
@@ -163,7 +164,7 @@ const AdminLogin = () => {
           {municipality && (
             <div className="mb-6 p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 flex items-center gap-3 animate-in fade-in">
               {municipality.logo_url ? (
-                <img src={municipality.logo_url} alt={municipality.name} className="h-10 w-10 rounded-xl object-contain bg-white" />
+                <img src={resolveImageUrl(municipality.logo_url)} alt={municipality.name} className="h-10 w-10 rounded-xl object-contain bg-white" />
               ) : (
                 <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Building2 className="h-5 w-5 text-primary" />

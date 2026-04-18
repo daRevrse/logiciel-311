@@ -1,5 +1,6 @@
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { resolveImageUrl } from '../utils/url';
 
 /**
  * Layout agent : header minimal (logo, nom, logout) + contenu.
@@ -15,14 +16,23 @@ const AgentLayout = ({ children }) => {
     logout();
   };
 
+  const license = municipality?.license || user?.municipality?.license || null;
+  const isLicenseExpired = license?.expires_at ? new Date(license.expires_at) < new Date() : false;
+  const isLicenseInactive = license?.is_active === false || isLicenseExpired;
+
   return (
     <div className="min-h-screen bg-surface flex flex-col">
+      {isLicenseInactive && (
+        <div className="w-full bg-red-600 text-white px-4 py-2 text-xs font-bold text-center animate-pulse z-50">
+          ⚠️ Licence inactive ou expirée. Contactez votre administrateur.
+        </div>
+      )}
       <header className="sticky top-0 z-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between px-4 py-3 gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {logoUrl ? (
               <img
-                src={logoUrl}
+                src={resolveImageUrl(logoUrl)}
                 alt="Logo"
                 className="h-9 w-9 rounded-full object-cover flex-shrink-0"
               />

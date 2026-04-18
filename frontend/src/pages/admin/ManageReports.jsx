@@ -20,6 +20,7 @@ import {
   Select
 } from '../../components/common';
 import reportService from '../../services/reportService';
+import { resolveImageUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
 /**
@@ -245,7 +246,7 @@ const ManageReports = () => {
                 onClick={() => handleReportClick(report.id)}>
                 {/* Thumbnail */}
                 {report.photos?.length > 0 ? (
-                  <img src={report.photos[0].photo_url} alt=""
+                  <img src={resolveImageUrl(report.photos[0].photo_url)} alt=""
                     className="w-24 h-24 object-cover rounded-xl flex-shrink-0" />
                 ) : (
                   <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">

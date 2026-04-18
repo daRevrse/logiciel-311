@@ -21,6 +21,7 @@ import {
   Modal
 } from '../../components/common';
 import reportService from '../../services/reportService';
+import { resolveImageUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
 /**
@@ -336,7 +337,7 @@ const MyReports = () => {
                     {report.photos && report.photos.length > 0 ? (
                       <div className="flex-shrink-0">
                         <img
-                          src={report.photos[0].photo_url}
+                          src={resolveImageUrl(report.photos[0].photo_url)}
                           alt="Photo du signalement"
                           className="w-full sm:w-32 h-32 object-cover rounded-lg"
                         />

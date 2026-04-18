@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import useMunicipalityTheme from '../../hooks/useMunicipalityTheme';
 import publicMunicipalityService from '../../services/publicMunicipalityService';
+import { resolveImageUrl } from '../../utils/url';
 
 const DAYS = [
   ['monday', 'Lundi'],
@@ -178,7 +179,7 @@ const MunicipalityPublicPage = () => {
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center p-1.5 flex-shrink-0">
               {data.logo_url ? (
-                <img src={data.logo_url} alt={displayName} className="w-full h-full object-contain" />
+                <img src={resolveImageUrl(data.logo_url)} alt={displayName} className="w-full h-full object-contain" />
               ) : (
                 <img src="/icone.png" alt="Muno" className="w-full h-full object-contain" />
               )}
@@ -201,7 +202,7 @@ const MunicipalityPublicPage = () => {
       {data.banner_url && (
         <section className="w-full">
           <div className="aspect-[16/9] md:aspect-[3/1] w-full overflow-hidden">
-            <img src={data.banner_url} alt="" className="w-full h-full object-cover" />
+            <img src={resolveImageUrl(data.banner_url)} alt="" className="w-full h-full object-cover" />
           </div>
         </section>
       )}

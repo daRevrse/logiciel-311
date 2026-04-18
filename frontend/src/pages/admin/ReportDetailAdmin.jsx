@@ -26,6 +26,7 @@ import {
 } from '../../components/common';
 import reportService from '../../services/reportService';
 import adminService from '../../services/adminService';
+import { resolveImageUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
 /**
@@ -235,7 +236,7 @@ const ReportDetailAdmin = () => {
                   {report.photos.map((photo) => (
                     <img
                       key={photo.id}
-                      src={photo.photo_url}
+                      src={resolveImageUrl(photo.photo_url)}
                       alt="Photo du signalement"
                       className="w-full h-48 object-cover rounded-lg"
                     />

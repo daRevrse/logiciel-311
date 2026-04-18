@@ -243,7 +243,12 @@ class AuthService {
         include: [{
           model: Municipality,
           as: 'municipality',
-          attributes: ['id', 'name', 'slug', 'logo_url', 'region', 'settings']
+          attributes: ['id', 'name', 'slug', 'logo_url', 'region', 'settings'],
+          include: [{
+            model: License,
+            as: 'license',
+            attributes: ['id', 'license_key', 'is_active', 'expires_at']
+          }]
         }]
       });
 
@@ -295,7 +300,8 @@ class AuthService {
             slug: user.municipality.slug,
             logo_url: user.municipality.logo_url,
             region: user.municipality.region,
-            settings: user.municipality.settings
+            settings: user.municipality.settings,
+            license: user.municipality.license
           } : null
         },
         token
@@ -317,7 +323,12 @@ class AuthService {
         include: [{
           model: Municipality,
           as: 'municipality',
-          attributes: ['id', 'name', 'region', 'logo_url']
+          attributes: ['id', 'name', 'region', 'logo_url', 'slug', 'settings'],
+          include: [{
+            model: License,
+            as: 'license',
+            attributes: ['id', 'license_key', 'is_active', 'expires_at']
+          }]
         }],
         attributes: { exclude: ['verification_code', 'verification_expires_at'] }
       });
@@ -336,7 +347,15 @@ class AuthService {
           role: user.role,
           isActive: user.is_active,
           lastLogin: user.last_login,
-          municipality: user.municipality,
+          municipality: user.municipality ? {
+            id: user.municipality.id,
+            name: user.municipality.name,
+            slug: user.municipality.slug,
+            region: user.municipality.region,
+            logo_url: user.municipality.logo_url,
+            settings: user.municipality.settings,
+            license: user.municipality.license
+          } : null,
           createdAt: user.created_at
         }
       };
