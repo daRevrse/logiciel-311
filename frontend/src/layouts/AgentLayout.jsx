@@ -1,4 +1,5 @@
 import { LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { resolveImageUrl } from '../utils/url';
 
@@ -8,12 +9,14 @@ import { resolveImageUrl } from '../utils/url';
  */
 const AgentLayout = ({ children }) => {
   const { user, logout, municipality } = useAuth();
+  const navigate = useNavigate();
 
   const logoUrl = municipality?.logo_url || user?.municipality?.logo_url || null;
   const fullName = user?.full_name || user?.fullName || 'Agent';
 
   const handleLogout = () => {
     logout();
+    navigate('/admin/login');
   };
 
   const license = municipality?.license || user?.municipality?.license || null;
@@ -37,16 +40,16 @@ const AgentLayout = ({ children }) => {
                 className="h-9 w-9 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center font-bold flex-shrink-0">
-                311
+              <div className="h-9 w-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 flex-shrink-0">
+                <img src="/logo_muno.png" alt="Muno" className="w-full h-full object-contain" />
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+              <p className="text-sm font-semibold text-navy-deep truncate">
                 {fullName}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                Espace agent
+              <p className="text-xs text-turquoise-dark font-medium truncate">
+                Espace agent{municipality?.name ? ` · ${municipality.name}` : ''}
               </p>
             </div>
           </div>

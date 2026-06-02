@@ -26,6 +26,18 @@ const logger = require('../utils/logger');
 const { Category, User, Municipality } = require('../models');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const mailService = require('../services/mailService');
+
+/** Génère un mot de passe temporaire (16 chars, alphanum URL-safe). */
+function generateTempPassword() {
+  return crypto.randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
+}
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 /**
  * Champs autorisés pour la mise à jour des settings municipalité (admin)
@@ -65,7 +77,7 @@ exports.changeStatus = async (req, res) => {
     }
 
     const reportId = parseInt(req.params.id);
-    const { status, comment } = req.body;
+    const { status, comment, closure_reason, closure_reason_details } = req.body;
     const adminId = req.userId;
     const municipalityId = req.municipalityId;
 
@@ -74,7 +86,9 @@ exports.changeStatus = async (req, res) => {
       status,
       adminId,
       municipalityId,
-      comment
+      comment,
+      closure_reason || null,
+      closure_reason_details || null
     );
 
     if (!result.success) {
@@ -411,7 +425,7 @@ exports.createCategory = async (req, res) => {
     }
 
     const municipalityId = req.municipalityId;
-    const { name, description, icon, color, active } = req.body;
+    const { name, description, icon, color, is_active, sla_hours } = req.body;
 
     const category = await Category.create({
       municipality_id: municipalityId,
@@ -419,7 +433,8 @@ exports.createCategory = async (req, res) => {
       description,
       icon: icon || 'map-pin',
       color: color || '#3B82F6',
-      active: active !== undefined ? active : true
+      is_active: is_active !== undefined ? is_active : true,
+      ...(sla_hours !== undefined ? { sla_hours } : {})
     });
 
     logger.info(`✅ Catégorie créée: ${category.name} (ID: ${category.id})`);
@@ -456,7 +471,7 @@ exports.updateCategory = async (req, res) => {
 
     const municipalityId = req.municipalityId;
     const categoryId = parseInt(req.params.id);
-    const { name, description, icon, color, active } = req.body;
+    const { name, description, icon, color, is_active, sla_hours } = req.body;
 
     const category = await Category.findOne({
       where: {
@@ -477,7 +492,8 @@ exports.updateCategory = async (req, res) => {
       description: description !== undefined ? description : category.description,
       icon: icon || category.icon,
       color: color || category.color,
-      active: active !== undefined ? active : category.active
+      is_active: is_active !== undefined ? is_active : category.is_active,
+      sla_hours: sla_hours !== undefined ? sla_hours : category.sla_hours
     });
 
     logger.info(`✅ Catégorie modifiée: ${category.name} (ID: ${category.id})`);
@@ -521,7 +537,7 @@ exports.deleteCategory = async (req, res) => {
     }
 
     // Désactiver plutôt que supprimer
-    await category.update({ active: false });
+    await category.update({ is_active: false });
 
     logger.info(`✅ Catégorie désactivée: ${category.name} (ID: ${category.id})`);
 
@@ -559,47 +575,74 @@ exports.createUser = async (req, res) => {
     }
 
     const municipalityId = req.municipalityId;
-    const { email, phone, full_name, role } = req.body;
+    const { email, full_name } = req.body;
+    // Seul un administrateur de mairie est créé ici (pas de super_admin via cette route)
+    const role = 'admin';
 
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await User.findOne({
-      where: { phone, municipality_id: municipalityId }
-    });
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email requis' });
+    }
 
+    // Unicité email (global — l'email est l'identifiant de connexion)
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: 'Un utilisateur avec ce numéro de téléphone existe déjà'
+        message: 'Un utilisateur avec cet email existe déjà'
       });
     }
 
-    const user = await User.create({
+    // Création avec mot de passe temporaire (connexion staff par email)
+    const tempPassword = generateTempPassword();
+    const user = User.build({
       municipality_id: municipalityId,
       email,
-      phone,
       full_name,
-      role: role || 'admin',
+      role,
       is_active: true
     });
+    await user.setPassword(tempPassword);
+    await user.save();
 
-    logger.info(`✅ Utilisateur créé: ${user.full_name} (${user.role})`);
+    logger.info(`✅ Administrateur créé: ${user.full_name} (id=${user.id}) municipalité=${municipalityId}`);
 
-    // Ne pas retourner les données sensibles
-    const userResponse = {
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      full_name: user.full_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at
+    const mailResult = await mailService.sendMail({
+      to: email,
+      subject: 'Invitation à rejoindre la console (administrateur)',
+      text: `Bonjour ${full_name},\n\nUn compte administrateur a été créé pour vous.\nEmail: ${email}\nMot de passe temporaire: ${tempPassword}\n\nMerci de le changer dès votre première connexion.`,
+      html: `<p>Bonjour <strong>${escapeHtml(full_name)}</strong>,</p>
+<p>Un compte administrateur a été créé pour vous.</p>
+<ul>
+  <li>Email: <strong>${escapeHtml(email)}</strong></li>
+  <li>Mot de passe temporaire: <code>${tempPassword}</code></li>
+</ul>
+<p>Merci de le changer dès votre première connexion.</p>`
+    });
+
+    const response = {
+      success: true,
+      message: 'Administrateur créé avec succès',
+      data: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+        is_active: user.is_active,
+        created_at: user.created_at
+      }
     };
 
-    res.status(201).json({
-      success: true,
-      message: 'Utilisateur créé avec succès',
-      data: userResponse
-    });
+    if (!mailResult.sent) {
+      logger.warn(`[users] invitation non envoyée à ${email}: ${mailResult.reason}`);
+      if (process.env.NODE_ENV !== 'production') {
+        response.temp_password = tempPassword;
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Mot de passe temporaire retourné pour usage manuel.`;
+      } else {
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Déclenchez une réinitialisation de mot de passe.`;
+      }
+    }
+
+    res.status(201).json(response);
 
   } catch (error) {
     logger.error(`Erreur createUser: ${error.message}`, { error });
@@ -629,6 +672,14 @@ exports.updateUser = async (req, res) => {
     const userId = parseInt(req.params.id);
     const { email, full_name, role, is_active } = req.body;
 
+    // Un admin de mairie ne peut pas créer/promouvoir un super_admin
+    if (role === 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Promotion en super administrateur non autorisée'
+      });
+    }
+
     const user = await User.findOne({
       where: {
         id: userId,
@@ -641,6 +692,11 @@ exports.updateUser = async (req, res) => {
         success: false,
         message: 'Utilisateur introuvable'
       });
+    }
+
+    // Une mairie ne gère pas les super_admins de la plateforme
+    if (user.role === 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Action non autorisée sur un super administrateur' });
     }
 
     await user.update({
@@ -708,6 +764,10 @@ exports.deleteUser = async (req, res) => {
       });
     }
 
+    if (user.role === 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Action non autorisée sur un super administrateur' });
+    }
+
     await user.update({ is_active: false });
 
     logger.info(`✅ Utilisateur désactivé: ${user.full_name} (ID: ${user.id})`);
@@ -734,9 +794,17 @@ exports.getUsers = async (req, res) => {
   try {
     const municipalityId = req.municipalityId;
 
+    const where = { municipality_id: municipalityId };
+    if (req.query.role) {
+      const roles = String(req.query.role).split(',').map((r) => r.trim()).filter(Boolean);
+      // Une mairie ne gère jamais les super_admins de la plateforme
+      const allowed = roles.filter((r) => r !== 'super_admin');
+      if (allowed.length) where.role = allowed.length === 1 ? allowed[0] : allowed;
+    }
+
     const users = await User.findAll({
-      where: { municipality_id: municipalityId },
-      attributes: ['id', 'email', 'phone', 'full_name', 'role', 'is_active', 'created_at'],
+      where,
+      attributes: ['id', 'email', 'phone', 'full_name', 'role', 'is_active', 'last_login', 'created_at'],
       order: [['created_at', 'DESC']]
     });
 
@@ -751,6 +819,58 @@ exports.getUsers = async (req, res) => {
       success: false,
       message: 'Erreur lors de la récupération des utilisateurs'
     });
+  }
+};
+
+/**
+ * Réinitialiser le mot de passe d'un administrateur
+ * POST /api/admin/users/:id/reset-password
+ */
+exports.resetUserPassword = async (req, res) => {
+  try {
+    const municipalityId = req.municipalityId;
+    const userId = parseInt(req.params.id);
+
+    const user = await User.findOne({
+      where: { id: userId, municipality_id: municipalityId, role: 'admin' }
+    });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Administrateur introuvable' });
+    }
+    if (!user.email) {
+      return res.status(400).json({ success: false, message: 'Cet utilisateur n\'a pas d\'email pour se connecter' });
+    }
+
+    const tempPassword = generateTempPassword();
+    await user.setPassword(tempPassword);
+    await user.save();
+    logger.info(`Mot de passe réinitialisé pour admin id=${user.id} municipalité=${municipalityId}`);
+
+    const mailResult = await mailService.sendMail({
+      to: user.email,
+      subject: 'Réinitialisation de votre mot de passe (administrateur)',
+      text: `Bonjour ${user.full_name},\n\nVotre mot de passe a été réinitialisé.\nEmail: ${user.email}\nNouveau mot de passe temporaire: ${tempPassword}\n\nMerci de le changer dès votre prochaine connexion.`,
+      html: `<p>Bonjour <strong>${escapeHtml(user.full_name)}</strong>,</p>
+<p>Votre mot de passe a été réinitialisé.</p>
+<ul>
+  <li>Email: <strong>${escapeHtml(user.email)}</strong></li>
+  <li>Nouveau mot de passe temporaire: <code>${tempPassword}</code></li>
+</ul>`
+    });
+
+    const response = { success: true, message: 'Mot de passe réinitialisé' };
+    if (!mailResult.sent) {
+      if (process.env.NODE_ENV !== 'production') {
+        response.temp_password = tempPassword;
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Mot de passe temporaire retourné.`;
+      } else {
+        response.mail_warning = `Email non envoyé (${mailResult.reason}).`;
+      }
+    }
+    res.json(response);
+  } catch (error) {
+    logger.error(`Erreur resetUserPassword: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur lors de la réinitialisation du mot de passe' });
   }
 };
 

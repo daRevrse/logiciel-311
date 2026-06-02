@@ -39,6 +39,7 @@ db.StatusHistory = require('./StatusHistory')(sequelize, Sequelize.DataTypes);
 db.Notification = require('./Notification')(sequelize, Sequelize.DataTypes);
 db.ActivityLog = require('./ActivityLog')(sequelize, Sequelize.DataTypes);
 db.Intervention = require('./Intervention')(sequelize, Sequelize.DataTypes);
+db.ReportComment = require('./ReportComment')(sequelize, Sequelize.DataTypes);
 
 // ============================================
 // DÉFINITION DES ASSOCIATIONS
@@ -238,6 +239,26 @@ db.Intervention.belongsTo(db.User, {
 db.Intervention.belongsTo(db.User, {
   foreignKey: 'assigned_by',
   as: 'assigner'
+});
+
+// Report <-> ReportComments
+db.Report.hasMany(db.ReportComment, {
+  foreignKey: 'report_id',
+  as: 'comments'
+});
+db.ReportComment.belongsTo(db.Report, {
+  foreignKey: 'report_id',
+  as: 'report'
+});
+
+// User <-> ReportComments (auteur)
+db.User.hasMany(db.ReportComment, {
+  foreignKey: 'author_id',
+  as: 'authoredComments'
+});
+db.ReportComment.belongsTo(db.User, {
+  foreignKey: 'author_id',
+  as: 'author'
 });
 
 module.exports = db;

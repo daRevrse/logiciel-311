@@ -90,6 +90,10 @@ const validateUpdateAgent = [
     .isString()
     .isLength({ min: 2, max: 255 })
     .withMessage('name entre 2 et 255 caractères'),
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('is_active doit être un booléen'),
   body('specializations')
     .optional()
     .isArray()
@@ -145,6 +149,18 @@ router.patch(
   logActivity('update_agent'),
   [...validateAgentId, ...validateUpdateAgent],
   agentAdminController.updateAgent
+);
+
+/**
+ * @route  POST /api/admin/agents/:id/reset-password
+ * @desc   Réinitialiser le mot de passe d'un agent (mot de passe temporaire)
+ */
+router.post(
+  '/:id/reset-password',
+  ...commonGuards,
+  logActivity('reset_agent_password'),
+  validateAgentId,
+  agentAdminController.resetAgentPassword
 );
 
 /**

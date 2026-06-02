@@ -66,6 +66,32 @@ router.post('/admin/login',
   authController.loginAdmin
 );
 
+/**
+ * @route   POST /api/auth/register
+ * @desc    Inscription citoyen par email + mot de passe
+ * @access  Public
+ */
+router.post('/register',
+  authLimiter,
+  authController.emailValidationRules.register,
+  authController.validate,
+  logActivity('register_email', 'user'),
+  authController.registerByEmail
+);
+
+/**
+ * @route   POST /api/auth/login/email
+ * @desc    Connexion citoyen par email + mot de passe
+ * @access  Public
+ */
+router.post('/login/email',
+  authLimiter,
+  authController.emailValidationRules.login,
+  authController.validate,
+  logActivity('login_email', 'user'),
+  authController.loginByEmail
+);
+
 // ============================================
 // ROUTES PROTÉGÉES (Authentification requise)
 // ============================================

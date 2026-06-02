@@ -50,7 +50,7 @@ const validatePagination = [
 const validateStatus = [
   query('status')
     .optional()
-    .isIn(['pending', 'in_progress', 'resolved', 'rejected'])
+    .isIn(['pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected'])
     .withMessage('Status invalide')
 ];
 

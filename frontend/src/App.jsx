@@ -10,11 +10,15 @@ import AgentLayout from './layouts/AgentLayout';
 // Pages citoyennes
 import Login from './pages/citizen/Login';
 import Home from './pages/citizen/Home';
-import ReportsList from './pages/citizen/ReportsList';
 import CreateReport from './pages/citizen/CreateReport';
+import EditReport from './pages/citizen/EditReport';
 import ReportDetail from './pages/citizen/ReportDetail';
 import MyReports from './pages/citizen/MyReports';
+import MesAppuis from './pages/citizen/MesAppuis';
 import PublicReport from './pages/citizen/PublicReport';
+import Register from './pages/citizen/Register';
+import Profile from './pages/citizen/Profile';
+import Notifications from './pages/citizen/Notifications';
 
 // Pages publiques (non authentifiées)
 import MunicipalityPublicPage from './pages/public/MunicipalityPublicPage';
@@ -26,6 +30,7 @@ import ManageReports from './pages/admin/ManageReports';
 import ReportDetailAdmin from './pages/admin/ReportDetailAdmin';
 import ManageCategories from './pages/admin/ManageCategories';
 import ManageUsers from './pages/admin/ManageUsers';
+import ManageCitizens from './pages/admin/ManageCitizens';
 import ManageMunicipalities from './pages/admin/ManageMunicipalities';
 import ManageLicenses from './pages/admin/ManageLicenses';
 import ManageSuperAdmins from './pages/admin/ManageSuperAdmins';
@@ -35,7 +40,6 @@ import AgentsList from './pages/admin/AgentsList';
 import InterventionsList from './pages/admin/InterventionsList';
 
 // Pages agent
-import AgentHome from './pages/agent/AgentHome';
 import MyInterventions from './pages/agent/MyInterventions';
 import InterventionDetail from './pages/agent/InterventionDetail';
 
@@ -46,8 +50,8 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, a
   if (loading) return <LoadingScreen />;
 
   if (!isAuthenticated) {
-    const isByPassingAdminPath = location.pathname.startsWith('/admin');
-    return <Navigate to={isByPassingAdminPath ? "/admin/login" : "/login"} replace state={{ from: location }} />;
+    const isAdminPath = adminOnly || superAdminOnly || location.pathname.startsWith('/admin');
+    return <Navigate to={isAdminPath ? '/admin/login' : '/login'} replace state={{ from: location }} />;
   }
 
   if (superAdminOnly && !isSuperAdmin()) return <Navigate to="/" replace />;
@@ -57,17 +61,17 @@ const ProtectedRoute = ({ children, adminOnly = false, superAdminOnly = false, a
   return children;
 };
 
-const RoleBasedRedirect = () => {
-  const { isAdmin, isAgent } = useAuth();
-  if (isAgent()) return <Navigate to="/agent" replace />;
-  return isAdmin() ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />;
-};
-
-// Entrée / : page publique pour invités, redirection par rôle sinon
+// Entrée / : redirection par rôle si connecté, page publique sinon
 const RootEntry = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isAdmin, isSuperAdmin, isAgent, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  return isAuthenticated ? <RoleBasedRedirect /> : <PublicReport />;
+  if (isAuthenticated) {
+    if (isAgent()) return <Navigate to="/agent" replace />;
+    if (isSuperAdmin()) return <Navigate to="/admin/system" replace />;
+    if (isAdmin()) return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/home" replace />;
+  }
+  return <PublicReport />;
 };
 
 // Layout citoyen : top navbar + contenu
@@ -132,6 +136,7 @@ function App() {
 
         <Routes>
           <Route path="/login"       element={<Login />} />
+          <Route path="/register"    element={<Register />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/:municipalitySlug/admin/login" element={<AdminLogin />} />
           <Route path="/public-report" element={<Navigate to="/" replace />} />
@@ -141,10 +146,15 @@ function App() {
 
           {/* Routes citoyennes */}
           <Route path="/home"           element={<ProtectedRoute><CitizenLayout><Home /></CitizenLayout></ProtectedRoute>} />
-          <Route path="/reports"        element={<ProtectedRoute><CitizenLayout><ReportsList /></CitizenLayout></ProtectedRoute>} />
+          {/* /reports fusionné dans l'accueil */}
+          <Route path="/reports"        element={<Navigate to="/home" replace />} />
           <Route path="/my-reports"     element={<ProtectedRoute><CitizenLayout><MyReports /></CitizenLayout></ProtectedRoute>} />
-          <Route path="/reports/create" element={<ProtectedRoute><CitizenLayout><CreateReport /></CitizenLayout></ProtectedRoute>} />
-          <Route path="/reports/:id"    element={<ProtectedRoute><CitizenLayout><ReportDetail /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/my-supports"    element={<ProtectedRoute><CitizenLayout><MesAppuis /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports/create"   element={<ProtectedRoute><CitizenLayout><CreateReport /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports/:id/edit"  element={<ProtectedRoute><CitizenLayout><EditReport /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/reports/:id"       element={<ProtectedRoute><CitizenLayout><ReportDetail /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/profile"        element={<ProtectedRoute><CitizenLayout><Profile /></CitizenLayout></ProtectedRoute>} />
+          <Route path="/notifications"  element={<ProtectedRoute><CitizenLayout><Notifications /></CitizenLayout></ProtectedRoute>} />
 
           {/* Routes admin */}
           <Route path="/admin/dashboard"      element={<ProtectedRoute adminOnly><AdminLayout><Dashboard /></AdminLayout></ProtectedRoute>} />
@@ -153,6 +163,7 @@ function App() {
           <Route path="/admin/reports/:id"    element={<ProtectedRoute adminOnly><AdminLayout><ReportDetailAdmin /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/categories"     element={<ProtectedRoute adminOnly><AdminLayout><ManageCategories /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/users"          element={<ProtectedRoute adminOnly><AdminLayout><ManageUsers /></AdminLayout></ProtectedRoute>} />
+          <Route path="/admin/citizens"       element={<ProtectedRoute adminOnly><AdminLayout><ManageCitizens /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/agents"         element={<ProtectedRoute adminOnly><AdminLayout><AgentsList /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/interventions"  element={<ProtectedRoute adminOnly><AdminLayout><InterventionsList /></AdminLayout></ProtectedRoute>} />
           <Route path="/admin/municipality/settings" element={<ProtectedRoute adminOnly><AdminLayout><MunicipalitySettings /></AdminLayout></ProtectedRoute>} />

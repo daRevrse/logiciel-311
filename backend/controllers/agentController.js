@@ -13,14 +13,17 @@ const {
   Report,
   User,
   Category,
-  ReportPhoto
+  ReportPhoto,
+  sequelize
 } = require('../models');
+const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 const uploadService = require('../services/uploadService');
 
 const ALLOWED_STATUSES = ['pending', 'scheduled', 'in_progress', 'completed', 'cancelled'];
 // Transitions autorisées pour l'agent (il ne peut pas annuler).
 const AGENT_ALLOWED_TARGETS = ['pending', 'in_progress', 'completed'];
+const ACTIVE_STATUSES = ['pending', 'scheduled', 'in_progress'];
 
 /**
  * Relations pour la réponse côté agent.
@@ -72,6 +75,97 @@ function formatIntervention(intervention) {
   }
   return data;
 }
+
+/**
+ * GET /api/agent/dashboard
+ * Métriques pour l'écran d'accueil de l'agent connecté.
+ */
+exports.getDashboard = async (req, res) => {
+  try {
+    const agentId = req.userId;
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [workloadRaw, completed30dRaw, upcoming, recentCompleted] = await Promise.all([
+      Intervention.findAll({
+        attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+        where: { agent_id: agentId },
+        group: ['status']
+      }),
+      Intervention.findAll({
+        attributes: ['started_at', 'completed_at'],
+        where: {
+          agent_id: agentId,
+          status: 'completed',
+          completed_at: { [Op.gte]: thirtyDaysAgo }
+        },
+        raw: true
+      }),
+      Intervention.findAll({
+        where: {
+          agent_id: agentId,
+          status: { [Op.in]: ACTIVE_STATUSES }
+        },
+        include: buildAgentInclude(),
+        order: [
+          [sequelize.literal('scheduled_at IS NULL'), 'ASC'],
+          ['scheduled_at', 'ASC'],
+          ['created_at', 'DESC']
+        ],
+        limit: 5
+      }),
+      Intervention.findAll({
+        where: { agent_id: agentId, status: 'completed' },
+        include: buildAgentInclude(),
+        order: [['completed_at', 'DESC']],
+        limit: 5
+      })
+    ]);
+
+    const workload = {};
+    ALLOWED_STATUSES.forEach((s) => { workload[s] = 0; });
+    workloadRaw.forEach((row) => {
+      workload[row.get('status')] = parseInt(row.get('count'), 10) || 0;
+    });
+
+    const totalAttempted30d = await Intervention.count({
+      where: {
+        agent_id: agentId,
+        [Op.or]: [
+          { status: 'completed', completed_at: { [Op.gte]: thirtyDaysAgo } },
+          { status: { [Op.in]: ['pending', 'scheduled', 'in_progress'] }, created_at: { [Op.gte]: thirtyDaysAgo } }
+        ]
+      }
+    });
+    const completed30dCount = completed30dRaw.length;
+    const completionRate30d = totalAttempted30d > 0
+      ? Math.round((completed30dCount / totalAttempted30d) * 100)
+      : 0;
+
+    const durations = completed30dRaw
+      .filter((r) => r.started_at && r.completed_at)
+      .map((r) => (new Date(r.completed_at) - new Date(r.started_at)) / (1000 * 60 * 60));
+    const avgResolutionHours30d = durations.length > 0
+      ? Math.round((durations.reduce((a, b) => a + b, 0) / durations.length) * 10) / 10
+      : null;
+
+    res.json({
+      success: true,
+      data: {
+        workload,
+        active_total: workload.pending + workload.scheduled + workload.in_progress,
+        completion_rate_30d: completionRate30d,
+        completed_30d: completed30dCount,
+        avg_resolution_hours_30d: avgResolutionHours30d,
+        upcoming: upcoming.map(formatIntervention),
+        recent_completed: recentCompleted.map(formatIntervention)
+      }
+    });
+  } catch (error) {
+    logger.error(`Erreur getDashboard agent: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur lors du chargement du dashboard' });
+  }
+};
 
 /**
  * GET /api/agent/interventions
@@ -257,7 +351,7 @@ exports.updateMyIntervention = async (req, res) => {
       });
     }
 
-    const { status, notes } = req.body;
+    const { status, notes, cost, started_at, completed_at } = req.body;
     const updates = {};
 
     if (status !== undefined) {
@@ -276,8 +370,28 @@ exports.updateMyIntervention = async (req, res) => {
       }
     }
 
-    if (notes !== undefined) {
-      updates.notes = notes;
+    if (notes !== undefined) updates.notes = notes;
+
+    if (started_at !== undefined) {
+      const d = started_at ? new Date(started_at) : null;
+      if (started_at && isNaN(d.getTime())) {
+        return res.status(400).json({ success: false, message: 'started_at invalide' });
+      }
+      updates.started_at = d;
+    }
+    if (completed_at !== undefined) {
+      const d = completed_at ? new Date(completed_at) : null;
+      if (completed_at && isNaN(d.getTime())) {
+        return res.status(400).json({ success: false, message: 'completed_at invalide' });
+      }
+      updates.completed_at = d;
+    }
+    if (cost !== undefined) {
+      const n = cost === null || cost === '' ? null : Number(cost);
+      if (n !== null && (Number.isNaN(n) || n < 0)) {
+        return res.status(400).json({ success: false, message: 'cost invalide' });
+      }
+      updates.cost = n;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -285,6 +399,7 @@ exports.updateMyIntervention = async (req, res) => {
     }
 
     await intervention.update(updates);
+    // Le statut du signalement est dérivé par le hook Intervention.afterUpdate.
 
     const full = await Intervention.findByPk(intervention.id, {
       include: buildAgentInclude()

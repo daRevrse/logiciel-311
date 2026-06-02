@@ -200,6 +200,33 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
               </div>
             </div>
 
+            {/* Durée et coût */}
+            {(intervention.started_at && intervention.completed_at) || intervention.cost !== null ? (
+              <div className="grid grid-cols-2 gap-3">
+                {intervention.started_at && intervention.completed_at && (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+                    <div className="text-xs text-slate-500 mb-1">Durée réelle</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {(() => {
+                        const ms = new Date(intervention.completed_at) - new Date(intervention.started_at);
+                        const h = Math.floor(ms / 3600000);
+                        const m = Math.floor((ms % 3600000) / 60000);
+                        return `${h}h ${m}min`;
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {intervention.cost !== null && intervention.cost !== undefined && (
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+                    <div className="text-xs text-slate-500 mb-1">Coût</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {Number(intervention.cost).toFixed(2)} €
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             {/* Current agent */}
             {intervention.agent && (
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -215,7 +242,7 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -228,7 +255,7 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
                   type="datetime-local"
                   value={scheduledAt}
                   onChange={(e) => setScheduledAt(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
                 />
               </div>
             </div>
@@ -238,7 +265,7 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
               <select
                 value={agentId || ''}
                 onChange={(e) => setAgentId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
               >
                 <option value="">—</option>
                 {agents.map((a) => (
@@ -258,7 +285,7 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
               />
             </div>
 
@@ -281,7 +308,7 @@ const InterventionDetailModal = ({ open, onClose, interventionId, onUpdated }) =
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-turquoise text-navy-deep hover:bg-turquoise/90 disabled:opacity-50"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Enregistrer

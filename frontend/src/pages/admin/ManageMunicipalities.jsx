@@ -193,14 +193,14 @@ const ManageMunicipalities = () => {
                   <tr key={m.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                          <Building2 className="h-5 w-5 text-primary-600" />
+                        <div className="w-10 h-10 rounded-full bg-turquoise/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-turquoise-dark" />
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{m.name}</div>
                           <div className="text-sm text-gray-500">{m.region}{m.country ? `, ${m.country}` : ''}</div>
                           {m.slug && (
-                            <div className="text-[11px] text-primary font-mono mt-0.5">/{m.slug}/admin/login</div>
+                            <div className="text-[11px] text-turquoise-dark font-mono mt-0.5">/{m.slug}/admin/login</div>
                           )}
                         </div>
                       </div>
@@ -234,7 +234,7 @@ const ManageMunicipalities = () => {
                                 () => toast.error('Impossible de copier')
                               );
                             }}
-                            className="text-slate-600 hover:text-primary"
+                            className="text-slate-600 hover:text-turquoise-dark"
                           >
                             <Copy className="h-4 w-4" />
                           </button>
@@ -346,7 +346,7 @@ const ManageMunicipalities = () => {
                             <div>
                               <div className="text-sm font-medium text-gray-800">
                                 {mod.name}
-                                {isCore && <span className="ml-2 text-xs text-primary-600">(core)</span>}
+                                {isCore && <span className="ml-2 text-xs text-turquoise-dark">(core)</span>}
                                 {!mod.implemented && <span className="ml-2 text-xs text-gray-400">(bientôt disponible)</span>}
                               </div>
                               <div className="text-xs text-gray-500">{mod.description}</div>
@@ -412,7 +412,7 @@ const ManageMunicipalities = () => {
                 <div className="flex items-center gap-2">
                   <code className="flex-1 bg-gray-100 px-3 py-2 rounded">{createdResult.license?.license_key}</code>
                   <button type="button" onClick={() => copyToClipboard(createdResult.license.license_key, 'Clé')}
-                    className="text-primary-600"><Copy className="h-4 w-4" /></button>
+                    className="text-turquoise-dark"><Copy className="h-4 w-4" /></button>
                 </div>
               </div>
               <div>
@@ -429,7 +429,7 @@ const ManageMunicipalities = () => {
                     {revealPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                   <button type="button" onClick={() => copyToClipboard(createdResult.admin.temp_password, 'Mot de passe')}
-                    className="text-primary-600"><Copy className="h-4 w-4" /></button>
+                    className="text-turquoise-dark"><Copy className="h-4 w-4" /></button>
                 </div>
               </div>
               <div className="text-xs text-gray-500">

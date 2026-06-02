@@ -58,6 +58,7 @@ class ReportController {
           title: report.title,
           status: report.status,
           priorityScore: report.priority_score,
+          tracking_code: report.tracking_code,
           createdAt: report.created_at
         }
       });
@@ -494,7 +495,7 @@ class ReportController {
     listReports: [
       query('status')
         .optional()
-        .isIn(['pending', 'in_progress', 'resolved', 'rejected']),
+        .isIn(['pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected']),
       query('categoryId')
         .optional()
         .isInt(),

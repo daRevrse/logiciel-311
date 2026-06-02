@@ -3,16 +3,20 @@ import React from 'react';
 const StatusBadge = ({ status, size = 'md' }) => {
   const statusConfig = {
     pending: {
-      label: 'Nouveau',
-      color: 'bg-blue-50 text-primary-700 border-primary-200',
+      label: 'En attente',
+      color: 'bg-slate-100 text-slate-700 border-slate-200',
     },
-    confirmed: {
-      label: 'Confirmé',
-      color: 'bg-primary-50 text-primary-800 border-primary-300',
+    assigned: {
+      label: 'Assigné',
+      color: 'bg-blue-50 text-blue-700 border-blue-200',
     },
     in_progress: {
       label: 'En cours',
       color: 'bg-amber-50 text-amber-700 border-amber-200',
+    },
+    completed: {
+      label: 'Terminé',
+      color: 'bg-cyan-50 text-cyan-700 border-cyan-200',
     },
     resolved: {
       label: 'Résolu',

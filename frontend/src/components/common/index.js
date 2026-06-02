@@ -11,3 +11,6 @@ export { default as StatusBadge } from './StatusBadge';
 export { default as Navbar } from './Navbar';
 export { default as Spinner, LoadingScreen } from './Spinner';
 export { default as PhotoUploader } from './PhotoUploader';
+export { default as HeroBackground } from './HeroBackground';
+export { default as ImageWithFallback } from './ImageWithFallback';
+export { default as AuthShell } from './AuthShell';

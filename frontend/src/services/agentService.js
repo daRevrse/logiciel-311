@@ -5,6 +5,14 @@ import api from './api';
  */
 const agentService = {
   /**
+   * Récupère le tableau de bord agent (métriques + listes courtes).
+   */
+  async getDashboard() {
+    const response = await api.get('/agent/dashboard');
+    return response.data;
+  },
+
+  /**
    * Récupère la liste des interventions de l'agent connecté.
    * @param {Object} [params]
    * @param {string} [params.status] - Filtre optionnel par statut.

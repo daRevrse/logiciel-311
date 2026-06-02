@@ -116,7 +116,7 @@ const InterventionsList = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Interventions</h1>
+        <h1 className="text-2xl font-bold text-navy-deep dark:text-slate-50">Interventions</h1>
         <p className="text-sm text-slate-500 mt-1">Suivi des interventions assignées aux agents.</p>
       </div>
 
@@ -201,7 +201,7 @@ const InterventionsList = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => openDetail(iv.id)}
-                        className="text-left font-medium text-slate-900 dark:text-slate-100 hover:text-primary hover:underline"
+                        className="text-left font-medium text-slate-900 dark:text-slate-100 hover:text-turquoise-dark hover:underline"
                       >
                         {iv.report?.title || `Signalement #${iv.report_id}`}
                       </button>
@@ -224,7 +224,7 @@ const InterventionsList = () => {
                       <div className="flex items-center justify-end">
                         <button
                           onClick={() => openDetail(iv.id)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800"
+                          className="p-2 rounded-lg text-slate-500 hover:text-turquoise-dark hover:bg-slate-100 dark:hover:bg-slate-800"
                           title="Modifier"
                         >
                           <Edit className="h-4 w-4" />
@@ -244,7 +244,7 @@ const InterventionsList = () => {
                 <div className="flex items-start justify-between gap-3">
                   <button
                     onClick={() => openDetail(iv.id)}
-                    className="text-left font-semibold text-slate-900 dark:text-slate-100 hover:text-primary flex-1 min-w-0 truncate"
+                    className="text-left font-semibold text-slate-900 dark:text-slate-100 hover:text-turquoise-dark flex-1 min-w-0 truncate"
                   >
                     {iv.report?.title || `Signalement #${iv.report_id}`}
                   </button>

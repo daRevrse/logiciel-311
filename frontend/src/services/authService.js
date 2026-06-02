@@ -77,6 +77,34 @@ const authService = {
    * @param {string} password - Mot de passe
    * @returns {Promise<Object>} Données d'authentification (user, token)
    */
+  /**
+   * Inscription citoyen email + mot de passe.
+   */
+  async registerByEmail({ email, password, full_name, municipality_id, municipality_slug }) {
+    const response = await api.post('/auth/register', {
+      email, password, full_name, municipality_id, municipality_slug
+    });
+    const data = response.data?.data || response.data;
+    if (data?.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+    return data;
+  },
+
+  /**
+   * Connexion citoyen par email + mot de passe.
+   */
+  async loginByEmail(email, password) {
+    const response = await api.post('/auth/login/email', { email, password });
+    const data = response.data?.data || response.data;
+    if (data?.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+    return data;
+  },
+
   async loginAdmin(email, password, municipalitySlug = null) {
     const response = await api.post('/auth/admin/login', {
       email,

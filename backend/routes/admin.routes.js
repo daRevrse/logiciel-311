@@ -36,7 +36,7 @@ const validateReportId = [
  */
 const validateStatusChange = [
   body('status')
-    .isIn(['pending', 'in_progress', 'resolved', 'rejected'])
+    .isIn(['pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected'])
     .withMessage('Statut invalide'),
   body('comment')
     .optional()
@@ -249,10 +249,14 @@ const validateCategory = [
     .optional()
     .matches(/^#[0-9A-F]{6}$/i)
     .withMessage('Couleur invalide (format #RRGGBB)'),
-  body('active')
+  body('is_active')
     .optional()
     .isBoolean()
-    .withMessage('Active doit être un booléen')
+    .withMessage('is_active doit être un booléen'),
+  body('sla_hours')
+    .optional()
+    .isInt({ min: 1, max: 8760 })
+    .withMessage('SLA entre 1 et 8760 heures')
 ];
 
 /**
@@ -322,23 +326,13 @@ router.delete(
  */
 const validateUser = [
   body('email')
-    .optional()
     .isEmail()
-    .withMessage('Email invalide'),
-  body('phone')
-    .notEmpty()
-    .withMessage('Téléphone requis')
-    .matches(/^\+?228[0-9]{8}$/)
-    .withMessage('Numéro togolais invalide (+228XXXXXXXX)'),
+    .withMessage('Email valide requis'),
   body('full_name')
     .notEmpty()
     .withMessage('Nom complet requis')
     .isLength({ min: 3, max: 100 })
-    .withMessage('Nom entre 3 et 100 caractères'),
-  body('role')
-    .optional()
-    .isIn(['citizen', 'admin', 'super_admin'])
-    .withMessage('Rôle invalide')
+    .withMessage('Nom entre 3 et 100 caractères')
 ];
 
 /**
@@ -384,10 +378,25 @@ router.put(
     param('id').isInt({ min: 1 }).withMessage('ID invalide'),
     body('email').optional().isEmail().withMessage('Email invalide'),
     body('full_name').optional().isLength({ min: 3, max: 100 }).withMessage('Nom entre 3 et 100 caractères'),
-    body('role').optional().isIn(['citizen', 'admin', 'super_admin']).withMessage('Rôle invalide'),
+    body('role').optional().isIn(['citizen', 'admin']).withMessage('Rôle invalide'),
     body('is_active').optional().isBoolean().withMessage('is_active doit être un booléen')
   ],
   adminController.updateUser
+);
+
+/**
+ * @route   POST /api/admin/users/:id/reset-password
+ * @desc    Réinitialiser le mot de passe d'un administrateur
+ * @access  Private (Admin uniquement)
+ */
+router.post(
+  '/users/:id/reset-password',
+  authenticateToken,
+  requireAdmin,
+  validateLicense,
+  logActivity('reset_user_password'),
+  param('id').isInt({ min: 1 }).withMessage('ID invalide'),
+  adminController.resetUserPassword
 );
 
 /**

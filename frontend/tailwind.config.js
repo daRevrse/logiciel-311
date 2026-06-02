@@ -8,6 +8,7 @@ export default {
     extend: {
       colors: {
         primary: {
+          DEFAULT: '#2F6FED',
           50:  '#EFF6FF',
           100: '#DBEAFE',
           200: '#BFDBFE',
@@ -20,6 +21,12 @@ export default {
           900: '#1E3A5F',
         },
         deep: '#1E3A5F',
+        'navy-deep': '#0D2B52',
+        turquoise: {
+          DEFAULT: '#2DD4BF',
+          light: '#5EEAD4',
+          dark: '#0D9488',
+        },
         support: {
           DEFAULT: '#2BB673',
           light:   '#6ED3A3',

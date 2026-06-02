@@ -82,11 +82,11 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     status: {
-      type: DataTypes.ENUM('pending', 'assigned', 'in_progress', 'resolved', 'rejected'),
+      type: DataTypes.ENUM('pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected'),
       defaultValue: 'pending',
       validate: {
         isIn: {
-          args: [['pending', 'assigned', 'in_progress', 'resolved', 'rejected']],
+          args: [['pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected']],
           msg: 'Statut invalide'
         }
       }
@@ -115,6 +115,39 @@ module.exports = (sequelize, DataTypes) => {
         model: 'users',
         key: 'id'
       }
+    },
+    closure_reason: {
+      type: DataTypes.ENUM(
+        'resolved_completed',
+        'resolved_duplicate',
+        'resolved_no_action_needed',
+        'rejected_invalid',
+        'rejected_out_of_scope',
+        'rejected_duplicate'
+      ),
+      allowNull: true,
+      field: 'closure_reason'
+    },
+    closure_reason_details: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'closure_reason_details'
+    },
+    sla_due_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'sla_due_at'
+    },
+    escalated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'escalated_at'
+    },
+    tracking_code: {
+      type: DataTypes.STRING(12),
+      allowNull: true,
+      field: 'tracking_code',
+      unique: true
     }
   }, {
     tableName: 'reports',
@@ -220,9 +253,55 @@ module.exports = (sequelize, DataTypes) => {
   // HOOKS
   // ============================================
 
-  // Après création : initialiser le score de priorité
+  // Avant création : générer un tracking_code unique (6 chars alphanum maj)
+  Report.beforeCreate(async (report) => {
+    if (!report.tracking_code) {
+      const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans O/0/I/1
+      for (let attempt = 0; attempt < 6; attempt++) {
+        let code = '';
+        for (let i = 0; i < 6; i++) code += ALPHA[Math.floor(Math.random() * ALPHA.length)];
+        const existing = await Report.findOne({ where: { tracking_code: code }, attributes: ['id'] });
+        if (!existing) {
+          report.tracking_code = code;
+          break;
+        }
+      }
+    }
+  });
+
+  // Après création : initialiser le score de priorité + calculer sla_due_at
   Report.afterCreate(async (report) => {
     await report.updatePriorityScore();
+
+    try {
+      const Category = sequelize.models.Category;
+      const category = await Category.findByPk(report.category_id);
+      if (category && category.sla_hours) {
+        const created = new Date(report.created_at);
+        const dueAt = new Date(created.getTime() + category.sla_hours * 3600 * 1000);
+        report.sla_due_at = dueAt;
+        await report.save({ hooks: false });
+      }
+    } catch (e) {
+      // SLA calc best-effort
+    }
+  });
+
+  // Validation closure_reason si statut final
+  Report.beforeSave(async (report) => {
+    if (report.changed('status')) {
+      const FINAL_STATUSES = ['resolved', 'rejected'];
+      if (FINAL_STATUSES.includes(report.status) && !report.closure_reason) {
+        throw new Error('closure_reason est requis pour le statut "' + report.status + '"');
+      }
+      // Vérifier cohérence statut/raison
+      if (report.closure_reason) {
+        const prefix = report.closure_reason.startsWith('resolved_') ? 'resolved' : 'rejected';
+        if (FINAL_STATUSES.includes(report.status) && report.status !== prefix) {
+          throw new Error('closure_reason "' + report.closure_reason + '" incompatible avec le statut "' + report.status + '"');
+        }
+      }
+    }
   });
 
   // Avant mise à jour du statut : enregistrer dans l'historique

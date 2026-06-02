@@ -76,7 +76,7 @@ const ManageSuperAdmins = () => {
                 <tr key={a.id}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary-600" />
+                      <Shield className="h-4 w-4 text-turquoise-dark" />
                       <span className="font-medium">{a.full_name}</span>
                     </div>
                   </td>

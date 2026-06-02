@@ -86,7 +86,11 @@ async function validateSpecializations(specializations, municipalityId) {
  * Formate un agent pour la réponse (sans password_hash, avec specialization_details).
  */
 function formatAgent(agent, categoriesById) {
-  const specializations = agent.specializations || [];
+  let specializations = agent.specializations;
+  if (typeof specializations === 'string') {
+    try { specializations = JSON.parse(specializations); } catch { specializations = []; }
+  }
+  if (!Array.isArray(specializations)) specializations = [];
   const details = categoriesById
     ? specializations.map((id) => {
         const cat = categoriesById.get(id);
@@ -131,10 +135,19 @@ exports.listAgents = async (req, res) => {
       offset
     });
 
-    // Collecte des IDs de catégories pour résolution en un seul SELECT
+    // Collecte des IDs de catégories pour résolution en un seul SELECT.
+    // `specializations` peut être un array, null, ou (selon driver MySQL) une string JSON.
+    const toArray = (v) => {
+      if (Array.isArray(v)) return v;
+      if (typeof v === 'string') {
+        try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; }
+        catch { return []; }
+      }
+      return [];
+    };
     const categoryIds = new Set();
     rows.forEach((agent) => {
-      (agent.specializations || []).forEach((id) => categoryIds.add(id));
+      toArray(agent.specializations).forEach((id) => categoryIds.add(id));
     });
 
     const categoriesById = new Map();
@@ -304,6 +317,7 @@ exports.updateAgent = async (req, res) => {
     const updates = {};
 
     if (full_name !== undefined) updates.full_name = full_name;
+    if (req.body.is_active !== undefined) updates.is_active = !!req.body.is_active;
 
     let categoriesById;
     if (specializations !== undefined) {
@@ -378,5 +392,58 @@ exports.deleteAgent = async (req, res) => {
   } catch (error) {
     logger.error(`Erreur deleteAgent: ${error.message}`, { error });
     res.status(500).json({ success: false, message: 'Erreur lors de la désactivation de l\'agent' });
+  }
+};
+
+/**
+ * POST /api/admin/agents/:id/reset-password
+ * Génère un nouveau mot de passe temporaire pour l'agent et tente de l'envoyer
+ * par email. En dev (SMTP non configuré), le mot de passe est renvoyé dans la réponse.
+ */
+exports.resetAgentPassword = async (req, res) => {
+  try {
+    const municipalityId = req.municipalityId;
+    const agentId = parseInt(req.params.id, 10);
+
+    const agent = await User.findOne({
+      where: { id: agentId, role: 'agent', municipality_id: municipalityId }
+    });
+    if (!agent) {
+      return res.status(404).json({ success: false, message: 'Agent introuvable' });
+    }
+
+    const tempPassword = generateTempPassword();
+    await agent.setPassword(tempPassword);
+    await agent.save();
+    logger.info(`Mot de passe réinitialisé pour agent id=${agent.id} municipalité=${municipalityId}`);
+
+    const mailResult = await mailService.sendMail({
+      to: agent.email,
+      subject: 'Réinitialisation de votre mot de passe (agent)',
+      text: `Bonjour ${agent.full_name},\n\nVotre mot de passe a été réinitialisé.\nEmail: ${agent.email}\nNouveau mot de passe temporaire: ${tempPassword}\n\nMerci de le changer dès votre prochaine connexion.`,
+      html: `<p>Bonjour <strong>${escapeHtml(agent.full_name)}</strong>,</p>
+<p>Votre mot de passe a été réinitialisé.</p>
+<ul>
+  <li>Email: <strong>${escapeHtml(agent.email)}</strong></li>
+  <li>Nouveau mot de passe temporaire: <code>${tempPassword}</code></li>
+</ul>
+<p>Merci de le changer dès votre prochaine connexion.</p>`
+    });
+
+    const response = { success: true, message: 'Mot de passe réinitialisé' };
+    if (!mailResult.sent) {
+      logger.warn(`[agents] reset password non envoyé à ${agent.email}: ${mailResult.reason}`);
+      if (process.env.NODE_ENV !== 'production') {
+        response.temp_password = tempPassword;
+        response.mail_warning = `Email non envoyé (${mailResult.reason}). Mot de passe temporaire retourné pour usage manuel.`;
+      } else {
+        response.mail_warning = `Email non envoyé (${mailResult.reason}).`;
+      }
+    }
+
+    res.json(response);
+  } catch (error) {
+    logger.error(`Erreur resetAgentPassword: ${error.message}`, { error });
+    res.status(500).json({ success: false, message: 'Erreur lors de la réinitialisation du mot de passe' });
   }
 };

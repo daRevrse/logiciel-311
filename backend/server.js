@@ -1,8 +1,11 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const logger = require('./utils/logger');
+const realtimeService = require('./services/realtimeService');
+const slaJob = require('./jobs/slaEscalationJob');
 
 // Initialisation de l'application
 const app = express();
@@ -138,10 +141,18 @@ const startServer = async () => {
     await sequelize.authenticate();
     logger.info('✓ Connexion à la base de données établie');
 
-    app.listen(PORT, () => {
+    const httpServer = http.createServer(app);
+    const realtime = realtimeService.init(httpServer, allowedOrigins);
+    app.set('realtime', realtime);
+    global.appInstance = app;
+
+    slaJob.start(app);
+
+    httpServer.listen(PORT, () => {
       logger.info(`🚀 Serveur démarré sur le port ${PORT}`);
       logger.info(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`🌐 URL: http://localhost:${PORT}`);
+      logger.info('📡 Socket.io activé');
     });
   } catch (error) {
     logger.error('❌ Erreur au démarrage du serveur:', error);

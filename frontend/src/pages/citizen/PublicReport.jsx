@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   MapPin,
   Send,
@@ -10,10 +10,18 @@ import {
   CheckCircle2,
   Lock,
   LogIn,
-  ThumbsUp
+  ThumbsUp,
+  Users,
+  ShieldCheck,
+  Zap,
+  Globe,
+  Map as MapIcon,
+  Search,
+  CheckCircle
 } from 'lucide-react';
-import { Button, Card, Input, Textarea } from '../../components/common';
+import { Button, Card, Input, Textarea, HeroBackground, ImageWithFallback } from '../../components/common';
 import { LocationPicker } from '../../components/citizen';
+import { IMAGES } from '../../config/images';
 import reportService from '../../services/reportService';
 import toast from 'react-hot-toast';
 
@@ -28,27 +36,28 @@ const initialForm = {
 };
 
 const PublicReport = () => {
+  const [params] = useSearchParams();
   const [municipalities, setMunicipalities] = useState([]);
   const [categories, setCategories] = useState([]);
   const [nearby, setNearby] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState(1); // 1: municipalité, 2: formulaire, 3: succès
+  const [step, setStep] = useState(1); // 1: accueil/choix municipalite, 2: formulaire, 3: succès
   const [createdReport, setCreatedReport] = useState(null);
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    fetchMunicipalities();
+    fetchData();
   }, []);
 
-  const fetchMunicipalities = async () => {
+  const fetchData = async () => {
     try {
-      const resp = await reportService.getPublicMunicipalities();
-      setMunicipalities(resp.data || []);
+      const muniResp = await reportService.getPublicMunicipalities();
+      setMunicipalities(muniResp.data || []);
     } catch (err) {
       console.error(err);
-      toast.error('Impossible de charger les municipalités');
+      toast.error('Erreur de chargement');
     } finally {
       setLoading(false);
     }
@@ -70,7 +79,15 @@ const PublicReport = () => {
     }
   };
 
-  // Recherche signalements similaires à proximité dès coordonnées connues
+  // Pré-sélection de la mairie si on arrive depuis sa page publique (?municipality=slug)
+  useEffect(() => {
+    const slug = params.get('municipality');
+    if (!slug || step !== 1 || municipalities.length === 0) return;
+    const match = municipalities.find((m) => m.slug === slug);
+    if (match) handleMunicipalitySelect(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [municipalities]);
+
   useEffect(() => {
     const fetchNearby = async () => {
       if (!formData.latitude || !formData.longitude) {
@@ -85,7 +102,6 @@ const PublicReport = () => {
         );
         setNearby((resp.data || resp || []).slice(0, 3));
       } catch (err) {
-        // Silencieux : fonctionnalité bonus
         setNearby([]);
       }
     };
@@ -112,12 +128,12 @@ const PublicReport = () => {
       const payload = { ...formData, is_anonymous: true };
       const resp = await reportService.createReport(payload);
       setCreatedReport(resp.data || resp);
-      toast.success('Signalement envoyé. Merci pour votre civisme !');
+      toast.success('Signalement envoyé. Merci !');
       setStep(3);
       window.scrollTo(0, 0);
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de l'envoi du signalement");
+      toast.error("Erreur lors de l'envoi");
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +142,6 @@ const PublicReport = () => {
   const handleReset = () => {
     setFormData(initialForm);
     setCreatedReport(null);
-    setCategories([]);
     setStep(1);
     window.scrollTo(0, 0);
   };
@@ -134,268 +149,439 @@ const PublicReport = () => {
   if (loading && step === 1 && municipalities.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-surface">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-deep"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      {/* Header sobre */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-deep flex items-center justify-center p-1.5">
-              <img src="/icone.png" alt="Muno" className="w-full h-full object-contain" />
-            </div>
-            <span className="font-bold text-deep">Muno</span>
-          </Link>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors"
-          >
-            <LogIn className="h-4 w-4" />
-            Se connecter
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white flex flex-col font-sans">
+      {/* Header Institutionnel */}
+      <nav className="bg-navy-deep border-b border-white/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-20 items-center">
+            <Link to="/" className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-1.5 shadow-lg shadow-turquoise/20">
+                <img src="/logo_muno.png" alt="Muno" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-white tracking-tight leading-none">Muno</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] text-turquoise font-bold mt-1">Signalement citoyen</span>
+              </div>
+            </Link>
 
-      {/* Hero allégé */}
-      <section className="bg-deep text-white">
-        <div className="max-w-5xl mx-auto px-4 py-14 lg:py-20">
-          <h1 className="text-3xl lg:text-5xl font-bold leading-tight mb-4 max-w-3xl">
-            Signalez un problème dans votre ville.
-          </h1>
-          <p className="text-white/80 max-w-2xl text-lg">
-            En quelques secondes, anonymement ou avec un compte.
-          </p>
-        </div>
-      </section>
-
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-10">
-        {step === 1 && (
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary-600" />
-              Choisissez votre municipalité
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {municipalities.map((muni) => (
-                <div
-                  key={muni.id}
-                  className="group bg-white rounded-card shadow-card hover:shadow-card-hover border border-transparent hover:border-primary-200 transition-all p-6 text-left flex flex-col"
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleMunicipalitySelect(muni)}
-                    className="text-left"
-                  >
-                    <div className="w-12 h-12 rounded-lg bg-primary-50 flex items-center justify-center mb-4 text-primary-600">
-                      <Building2 className="w-6 h-6" />
-                    </div>
-                    <p className="font-semibold text-gray-900">{muni.name}</p>
-                    <p className="text-xs text-muted mt-1">{muni.code}</p>
-                  </button>
-                  {muni.slug && (
-                    <Link
-                      to={`/m/${muni.slug}`}
-                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
-                    >
-                      Voir la page de la mairie
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { icon: Clock, title: 'Rapide', desc: 'Moins d’une minute' },
-                { icon: Lock, title: 'Anonyme', desc: 'Aucun compte requis' },
-                { icon: ThumbsUp, title: 'Impact', desc: "L'appui citoyen priorise les cas" }
-              ].map((f, i) => (
-                <div key={i} className="bg-white rounded-card shadow-card p-5 flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary-50 text-primary-600">
-                    <f.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{f.title}</p>
-                    <p className="text-sm text-muted">{f.desc}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="hidden md:flex items-center gap-8">
+              <Link to="/login" className="text-sm font-medium text-white/80 hover:text-turquoise transition-colors">Suivre mes signalements</Link>
+              <Link
+                to="/admin/login"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-all border border-white/10"
+              >
+                <LogIn className="w-4 h-4" />
+                Espace Mairie
+              </Link>
             </div>
           </div>
-        )}
+        </div>
+      </nav>
 
-        {step === 2 && (
-          <div>
-            <button
-              onClick={() => setStep(1)}
-              className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary-600 mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Changer de ville
-            </button>
+      <main className="flex-1">
+        {step === 1 && (
+          <>
+            {/* Hero Section Restructuré */}
+            <section className="relative bg-navy-deep overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-32">
+              <HeroBackground image={IMAGES.heroCity} opacity={0.3} />
+              {/* Cercles décoratifs */}
+              <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-turquoise/5 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-turquoise/10 rounded-full blur-3xl"></div>
 
-            <Card className="p-6 lg:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Détails du signalement</h2>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="grid lg:grid-cols-2 gap-16 items-center">
+                  <div className="space-y-8 animate-in slide-in-from-left-8 duration-700">
+                    <div>
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-turquoise/20 text-turquoise text-xs font-bold uppercase tracking-wider mb-6">
+                        <Zap className="w-3 h-3" />
+                        Engagement Citoyen 2.0
+                      </span>
+                      <h1 className="text-4xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
+                        Votre ville vous <span className="text-turquoise italic">écoute.</span><br /> 
+                        Agissons ensemble.
+                      </h1>
+                      <p className="mt-6 text-xl text-white/70 max-w-xl leading-relaxed">
+                        Signalez les dysfonctionnements urbains en 60 secondes. Une plateforme souveraine pour des municipalités plus réactives et un cadre de vie amélioré.
+                      </p>
+                    </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Catégorie <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className={`w-full px-3 py-2 rounded-lg border ${errors.categoryId ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none`}
-                    value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  >
-                    <option value="">Sélectionnez une catégorie</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                  {errors.categoryId && <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>}
-                </div>
-
-                <Input
-                  label="Titre"
-                  placeholder="Ex : Éclairage en panne, nid-de-poule..."
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  error={errors.title}
-                  required
-                />
-
-                <Textarea
-                  label="Description"
-                  placeholder="Décrivez le problème avec le plus de précision possible..."
-                  rows={4}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  error={errors.description}
-                  required
-                />
-
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="w-4 h-4 text-primary-600" />
-                    <h3 className="font-medium text-gray-900">Localisation</h3>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button 
+                        onClick={() => {
+                          const element = document.getElementById('municipality-grid');
+                          element?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-turquoise text-navy-deep font-bold text-lg hover:bg-turquoise/90 transition-all transform hover:-translate-y-1 shadow-xl shadow-turquoise/20"
+                      >
+                        Faire un signalement
+                        <ArrowRight className="ml-2 w-5 h-5" />
+                      </button>
+                      <Link 
+                        to="/login"
+                        className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white/10 text-white font-bold text-lg hover:bg-white/20 transition-all border border-white/20 backdrop-blur-sm"
+                      >
+                        Suivre mes cas
+                      </Link>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-4 text-sm text-white/60">
+                      <span className="inline-flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-turquoise" /> Localisation précise
+                      </span>
+                      <span className="inline-flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-turquoise" /> Suivi du traitement
+                      </span>
+                      <span className="inline-flex items-center gap-2">
+                        <ThumbsUp className="w-4 h-4 text-turquoise" /> Appui citoyen
+                      </span>
+                    </div>
                   </div>
-                  <LocationPicker
-                    address={formData.address}
-                    setAddress={(addr) => setFormData(prev => ({ ...prev, address: addr }))}
-                    latitude={formData.latitude}
-                    setLatitude={(lat) => setFormData(prev => ({ ...prev, latitude: lat }))}
-                    longitude={formData.longitude}
-                    setLongitude={(lng) => setFormData(prev => ({ ...prev, longitude: lng }))}
-                    error={errors.address}
-                  />
-                </div>
 
-                {nearby.length > 0 && (
-                  <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
-                    <p className="font-medium text-deep mb-2 flex items-center gap-2">
-                      <ThumbsUp className="w-4 h-4 text-support" />
-                      Signalements similaires à proximité
-                    </p>
-                    <p className="text-xs text-muted mb-3">
-                      Connectez-vous pour appuyer un signalement existant plutôt que d'en créer un doublon.
-                    </p>
-                    <ul className="space-y-2">
-                      {nearby.map((r) => (
-                        <li key={r.id} className="bg-white rounded p-3 text-sm flex items-center justify-between">
-                          <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{r.title}</p>
-                            <p className="text-xs text-muted truncate">{r.address}</p>
+                  {/* Carte flottante (Visualisation) */}
+                  <div className="relative hidden lg:block animate-in zoom-in-95 duration-1000 delay-200">
+                    <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 border border-white/10 shadow-2xl relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-navy-deep/40 to-transparent pointer-events-none"></div>
+                      
+                      {/* Fake Map Content */}
+                      <div className="aspect-[4/3] bg-navy-deep/50 rounded-2xl relative">
+                        {/* Map Pins */}
+                        <div className="absolute top-1/4 left-1/3 animate-bounce">
+                          <MapPin className="w-8 h-8 text-turquoise fill-turquoise/20" />
+                        </div>
+                        <div className="absolute top-1/2 left-2/3 animate-bounce delay-150">
+                          <MapPin className="w-6 h-6 text-white/50" />
+                        </div>
+                        <div className="absolute bottom-1/3 left-1/4 animate-bounce delay-300">
+                          <MapPin className="w-6 h-6 text-white/30" />
+                        </div>
+
+                        {/* Légende décorative */}
+                        <div className="absolute bottom-6 left-6 right-6">
+                          <div className="bg-white/90 backdrop-blur p-4 rounded-xl border border-white">
+                            <p className="text-sm font-bold text-navy-deep">Signalez en quelques secondes</p>
+                            <p className="text-xs text-gray-500 mt-1">Placez le problème sur la carte, décrivez-le, et suivez son traitement par votre mairie.</p>
                           </div>
-                          <span className="text-xs text-muted flex items-center gap-1 ml-2">
-                            <ThumbsUp className="w-3 h-3" />
-                            {r.support_count ?? 0}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
+              </div>
+            </section>
 
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 flex gap-2 text-amber-800 text-sm">
-                  <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p>
-                    <strong>Note :</strong> les photos ne sont acceptées que depuis un compte citoyen.
+            {/* Grille de Municipalités */}
+            <section id="municipality-grid" className="py-24 bg-gray-50/50">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-16 space-y-4">
+                  <h2 className="text-3xl lg:text-4xl font-extrabold text-navy-deep tracking-tight">Où voulez-vous agir ?</h2>
+                  <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
+                    Sélectionnez votre municipalité pour commencer un signalement. Nous étendons notre réseau chaque semaine.
                   </p>
                 </div>
 
-                <div className="pt-2 flex justify-end">
-                  <Button variant="primary" type="submit" loading={submitting}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {municipalities.map((muni) => (
+                    <div
+                      key={muni.id}
+                      className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl hover:border-turquoise/30 transition-all relative overflow-hidden flex flex-col"
+                    >
+                      {/* Bannière photo */}
+                      <div className="relative h-32">
+                        <ImageWithFallback
+                          src={muni.logo_url || IMAGES.municipalityDefault}
+                          alt={muni.name}
+                          className="w-full h-full"
+                          imgClassName="transition-transform duration-700 group-hover:scale-110"
+                        >
+                          <Building2 className="w-10 h-10 text-white/70" />
+                        </ImageWithFallback>
+                        <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/70 via-navy-deep/10 to-transparent" />
+                        {muni.name.includes('Lomé') && (
+                          <div className="absolute top-0 right-0 bg-turquoise text-navy-deep text-[10px] px-4 py-1 font-black uppercase tracking-widest rounded-bl-xl">
+                            Disponible
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-8 flex flex-col flex-1">
+                      <h3 className="text-2xl font-bold text-navy-deep mb-2">{muni.name}</h3>
+                      <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+                        Signalez les problèmes de voirie, éclairage et propreté directement aux services de la ville de {muni.name}.
+                      </p>
+
+                      <div className="flex items-center justify-between mt-auto">
+                        <button
+                          onClick={() => handleMunicipalitySelect(muni)}
+                          className="px-6 py-3 bg-navy-deep text-white rounded-xl font-bold text-sm hover:bg-navy-deep/90 transition-all flex items-center gap-2"
+                        >
+                          Signaler ici
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                        {muni.slug && (
+                          <Link to={`/m/${muni.slug}`} className="text-xs font-bold text-navy-deep/60 hover:text-navy-deep underline underline-offset-4 tracking-tight">
+                            Page Mairie
+                          </Link>
+                        )}
+                      </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Carte Bientôt */}
+                  <div className="group bg-navy-deep/5 rounded-3xl p-8 border-2 border-dashed border-navy-deep/10 flex flex-col items-center justify-center text-center space-y-4 min-h-[300px]">
+                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-navy-deep shadow-sm">
+                      <Globe className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-navy-deep">Votre ville ?</h3>
+                      <p className="text-sm text-gray-500 max-w-[200px] mt-2 font-medium">Bientôt disponible dans toutes les préfectures du Togo.</p>
+                    </div>
+                    <Link to="/login" className="text-xs font-black uppercase tracking-widest text-navy-deep hover:text-turquoise transition-colors">
+                      Proposer ma mairie
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {step === 2 && (
+          <div className="max-w-4xl mx-auto px-4 py-16">
+            <button
+              onClick={() => setStep(1)}
+              className="inline-flex items-center gap-2 text-sm font-bold text-navy-deep hover:text-turquoise mb-8 transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Retour au portail
+            </button>
+
+            <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100">
+              <div className="bg-navy-deep p-8 text-white relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-turquoise/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                <h2 className="text-3xl font-extrabold tracking-tight">Soumettre un signalement</h2>
+                <p className="text-white/60 mt-1">Les services municipaux traiteront votre demande avec priorité.</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-8 lg:p-12 space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-black text-navy-deep uppercase tracking-widest">
+                      Catégorie <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      className={`w-full px-4 py-4 rounded-xl bg-gray-50 border ${errors.categoryId ? 'border-rose-500' : 'border-gray-200'} focus:ring-2 focus:ring-turquoise focus:border-transparent outline-none transition-all font-medium`}
+                      value={formData.categoryId}
+                      onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                    >
+                      <option value="">Que voulez-vous signaler ?</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                    {errors.categoryId && <p className="text-rose-500 text-xs font-bold">{errors.categoryId}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-black text-navy-deep uppercase tracking-widest">
+                      Titre bref <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex : Panne éclairage rue X"
+                      className={`w-full px-4 py-4 rounded-xl bg-gray-50 border ${errors.title ? 'border-rose-500' : 'border-gray-200'} focus:ring-2 focus:ring-turquoise focus:border-transparent outline-none transition-all font-medium`}
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    />
+                    {errors.title && <p className="text-rose-500 text-xs font-bold">{errors.title}</p>}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-black text-navy-deep uppercase tracking-widest">
+                    Description détaillée <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Apportez plus de précisions pour aider les équipes techniques..."
+                    className={`w-full px-4 py-4 rounded-xl bg-gray-50 border ${errors.description ? 'border-rose-500' : 'border-gray-200'} focus:ring-2 focus:ring-turquoise focus:border-transparent outline-none transition-all font-medium`}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                  {errors.description && <p className="text-rose-500 text-xs font-bold">{errors.description}</p>}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-turquoise" />
+                    <h3 className="font-bold text-navy-deep text-lg">Localisation précise</h3>
+                  </div>
+                  <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
+                    <LocationPicker
+                      address={formData.address}
+                      setAddress={(addr) => setFormData(prev => ({ ...prev, address: addr }))}
+                      latitude={formData.latitude}
+                      setLatitude={(lat) => setFormData(prev => ({ ...prev, latitude: lat }))}
+                      longitude={formData.longitude}
+                      setLongitude={(lng) => setFormData(prev => ({ ...prev, longitude: lng }))}
+                      error={errors.address}
+                    />
+                  </div>
+                </div>
+
+                {nearby.length > 0 && (
+                  <div className="bg-navy-deep/5 rounded-2xl p-6 border border-navy-deep/10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-1.5 rounded-lg bg-turquoise/20 text-navy-deep">
+                        <Search className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-bold text-navy-deep">Cas similaires à proximité</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {nearby.map((r) => (
+                        <div key={r.id} className="bg-white p-4 rounded-xl border border-gray-100 flex items-center justify-between shadow-sm">
+                          <div className="min-w-0 pr-4">
+                            <p className="font-bold text-navy-deep text-sm truncate">{r.title}</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">{r.address}</p>
+                          </div>
+                          <div className="flex flex-col items-end flex-shrink-0">
+                            <span className="text-xs font-bold text-turquoise bg-turquoise/10 px-2 py-1 rounded-md flex items-center gap-1.5">
+                              <ThumbsUp className="w-3 h-3" />
+                              {r.support_count ?? 0}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
+                  <div className="flex items-start gap-3 bg-amber-50 p-4 rounded-xl border border-amber-100 max-w-sm">
+                    <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-amber-800 font-bold leading-relaxed">
+                      Compte invité : votre signalement est anonyme et ne peut pas inclure de photos pour des raisons de sécurité.
+                    </p>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-5 rounded-2xl bg-navy-deep text-white font-black text-lg hover:bg-navy-deep/90 transition-all shadow-xl shadow-navy-deep/20 disabled:opacity-50"
+                  >
                     Envoyer le signalement
-                    <Send className="w-4 h-4 ml-2" />
-                  </Button>
+                    <Send className="ml-3 w-5 h-5" />
+                  </button>
                 </div>
               </form>
-            </Card>
-
-            {/* Incitation compte */}
-            <div className="mt-6 bg-white rounded-card shadow-card p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold text-gray-900">Boostez votre signalement</p>
-                <p className="text-sm text-muted">
-                  Les signalements authentifiés reçoivent un bonus de <strong>+10</strong> en priorité.
-                </p>
-              </div>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-support text-white font-medium hover:bg-support-dark transition-colors text-sm"
-              >
-                Créer un compte
-                <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
           </div>
         )}
 
         {step === 3 && (
-          <Card className="p-10 text-center max-w-xl mx-auto">
-            <div className="w-16 h-16 bg-support/10 text-support rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-9 h-9" />
+          <div className="max-w-2xl mx-auto px-4 py-24 text-center">
+            <div className="w-24 h-24 bg-turquoise/10 text-turquoise rounded-full flex items-center justify-center mx-auto mb-10 animate-in zoom-in-95">
+              <CheckCircle2 className="w-12 h-12" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Merci pour votre civisme !</h2>
-            <p className="text-muted mb-6">
-              Votre signalement a été enregistré et transmis aux services municipaux.
+            <h2 className="text-4xl lg:text-5xl font-black text-navy-deep mb-6 tracking-tight">Héritage citoyen !</h2>
+            <p className="text-xl text-gray-500 mb-12 max-w-lg mx-auto">
+              Votre signalement a été transmis avec succès. Ensemble, nous bâtissons des villes plus modernes.
             </p>
 
-            {createdReport?.id && (
-              <div className="bg-surface rounded-lg p-4 mb-6 text-sm">
-                <p className="text-muted">Numéro de référence</p>
-                <p className="font-bold text-deep text-lg">#{createdReport.id}</p>
-                <p className="text-xs text-muted mt-2">
-                  Sans compte, le suivi n'est pas accessible. Créez un compte pour suivre et appuyer vos signalements.
-                </p>
+            <div className="bg-navy-deep rounded-3xl p-8 mb-12 text-white relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+              <p className="text-white/60 text-xs font-bold uppercase tracking-[0.2em] mb-2">Référence de suivi</p>
+              <p className="text-4xl font-black text-turquoise tracking-wider mb-6">#{createdReport?.id || '311-TG-82'}</p>
+              <div className="bg-white/10 p-4 rounded-xl text-xs text-white/80 leading-relaxed font-medium">
+                Notez ce numéro. Pour recevoir des mises à jour en direct et ajouter des photos, créez votre compte citoyen maintenant.
               </div>
-            )}
+            </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/login"
-                className="px-6 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                to="/register"
+                className="px-8 py-4 bg-turquoise text-navy-deep rounded-xl font-bold hover:shadow-lg transition-all"
               >
                 Créer mon compte
               </Link>
               <button
                 onClick={handleReset}
-                className="px-6 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                className="px-8 py-4 bg-white text-navy-deep border-2 border-navy-deep/10 rounded-xl font-bold hover:bg-gray-50 transition-all"
               >
                 Nouveau signalement
               </button>
             </div>
-          </Card>
+          </div>
         )}
       </main>
 
-      <footer className="py-8 text-center text-muted text-sm border-t border-gray-100 bg-white">
-        <p>© 2026 Muno — Engagement citoyen & modernité municipale</p>
+      {/* Footer Institutionnel */}
+      <footer className="bg-navy-deep text-white pt-24 pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-white/10">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1">
+                  <img src="/logo_muno.png" alt="Muno" className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xl font-bold tracking-tight">Muno</span>
+              </div>
+              <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+                La plateforme de signalement citoyen au service de l'action communale au Togo.
+              </p>
+              <div className="flex gap-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-turquoise/20 transition-colors cursor-pointer">
+                    <div className="w-4 h-4 bg-white/20 rounded-sm"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-6 text-turquoise">Municipalité</h4>
+              <ul className="space-y-4 text-sm text-white/60">
+                <li><Link to="/admin/login" className="hover:text-white transition-colors">Espace Mairie</Link></li>
+                <li><Link to="/admin/login" className="hover:text-white transition-colors">Portail administrateur</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-6 text-turquoise">Ressources</h4>
+              <ul className="space-y-4 text-sm text-white/40">
+                <li>Guide du citoyen</li>
+                <li>Questions fréquentes</li>
+                <li>Support technique</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-6 text-turquoise">Légal</h4>
+              <ul className="space-y-4 text-sm text-white/40">
+                <li>Mentions légales</li>
+                <li>Protection des données</li>
+                <li>Conditions d'utilisation</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-12 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-white/40 text-xs font-medium tracking-wide">
+              © 2026 MUNO — TOUS DROITS RÉSERVÉS.
+            </p>
+            <div className="flex items-center gap-8">
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Modernité</span>
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Réactivité</span>
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Civisme</span>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );

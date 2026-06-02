@@ -68,6 +68,13 @@ exports.listInterventions = async (req, res) => {
       }
       where.agent_id = agentId;
     }
+    if (req.query.report_id) {
+      const reportId = parseInt(req.query.report_id, 10);
+      if (!Number.isInteger(reportId) || reportId < 1) {
+        return res.status(400).json({ success: false, message: 'report_id invalide' });
+      }
+      where.report_id = reportId;
+    }
 
     const reportWhere = { municipality_id: municipalityId };
     if (req.query.category_id) {
@@ -166,6 +173,9 @@ exports.createIntervention = async (req, res) => {
       notes: notes || null
     });
 
+    // Le statut du signalement est dérivé automatiquement par le hook
+    // Intervention.afterCreate → deriveReportStatus (passe à "assigned").
+
     const full = await Intervention.findByPk(intervention.id, { include: buildInclude() });
 
     res.status(201).json({
@@ -237,6 +247,8 @@ exports.updateIntervention = async (req, res) => {
     }
 
     await intervention.update(updates);
+    // Le statut du signalement est dérivé par le hook Intervention.afterUpdate.
+
     const full = await Intervention.findByPk(intervention.id, { include: buildInclude() });
 
     res.json({
@@ -268,63 +280,19 @@ exports.suggestAgents = async (req, res) => {
       return res.status(400).json({ success: false, message: 'report_id requis' });
     }
 
-    const report = await Report.findByPk(reportId);
-    if (!report || report.municipality_id !== municipalityId) {
-      return res.status(404).json({ success: false, message: 'Signalement introuvable dans cette municipalité' });
+    const agentSuggestionService = require('../services/agentSuggestionService');
+    const onlySpecialized = req.query.only_specialized === 'true';
+
+    let results = await agentSuggestionService.suggestAgentsForReport(reportId, municipalityId);
+    if (onlySpecialized) {
+      results = results.filter((r) => r.is_specialized);
     }
-
-    const categoryId = report.category_id;
-
-    // Trouver les agents avec cette catégorie dans specializations (array JSONB/JSON).
-    // On filtre en JS après un SELECT côté municipalité — la taille du jeu est
-    // bornée par le nombre d'agents par mairie.
-    const agents = await User.findAll({
-      where: { role: 'agent', municipality_id: municipalityId, is_active: true },
-      attributes: ['id', 'email', 'full_name', 'phone', 'specializations']
-    });
-
-    const specialized = agents.filter((a) => {
-      const specs = Array.isArray(a.specializations) ? a.specializations : [];
-      return specs.includes(categoryId);
-    });
-
-    if (specialized.length === 0) {
-      return res.json({ success: true, data: [] });
-    }
-
-    // Calcul de la charge active pour chaque agent spécialisé.
-    const ids = specialized.map((a) => a.id);
-    const counts = await Intervention.findAll({
-      attributes: [
-        'agent_id',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'workload']
-      ],
-      where: {
-        agent_id: { [Op.in]: ids },
-        status: { [Op.in]: ACTIVE_STATUSES }
-      },
-      group: ['agent_id']
-    });
-
-    const workloadById = new Map();
-    counts.forEach((c) => {
-      workloadById.set(c.get('agent_id'), parseInt(c.get('workload'), 10) || 0);
-    });
-
-    const results = specialized
-      .map((a) => ({
-        id: a.id,
-        email: a.email,
-        full_name: a.full_name,
-        phone: a.phone,
-        specializations: a.specializations || [],
-        workload: workloadById.get(a.id) || 0,
-        is_specialized: true
-      }))
-      .sort((a, b) => a.workload - b.workload);
 
     res.json({ success: true, data: results });
   } catch (error) {
+    if (error.status === 404) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     logger.error(`Erreur suggestAgents: ${error.message}`, { error });
     res.status(500).json({ success: false, message: 'Erreur lors de la suggestion d\'agents' });
   }

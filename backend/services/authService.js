@@ -238,7 +238,8 @@ class AuthService {
       const user = await User.findOne({
         where: {
           email: email,
-          role: ['admin', 'super_admin']
+          // Connexion staff : admins, super-admins ET agents municipaux
+          role: ['admin', 'super_admin', 'agent']
         },
         include: [{
           model: Municipality,

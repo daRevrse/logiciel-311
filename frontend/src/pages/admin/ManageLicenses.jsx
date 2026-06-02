@@ -154,7 +154,7 @@ const ManageLicenses = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <code className="text-sm bg-gray-100 px-2 py-1 rounded">{l.license_key}</code>
-                        <button onClick={() => copyKey(l.license_key)} className="text-gray-500 hover:text-primary-600">
+                        <button onClick={() => copyKey(l.license_key)} className="text-gray-500 hover:text-turquoise-dark">
                           <Copy className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -197,7 +197,7 @@ const ManageLicenses = () => {
                 <h2 className="text-xl font-bold text-gray-900">{selected.municipality_name}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <code className="text-sm bg-gray-100 px-2 py-1 rounded">{selected.license_key}</code>
-                  <button onClick={() => copyKey(selected.license_key)} className="text-gray-500 hover:text-primary-600">
+                  <button onClick={() => copyKey(selected.license_key)} className="text-gray-500 hover:text-turquoise-dark">
                     <Copy className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -233,7 +233,7 @@ const ManageLicenses = () => {
                       <div>
                         <div className="text-sm font-medium text-gray-800">
                           {mod.name}
-                          {mod.category === 'core' && <span className="ml-2 text-xs text-primary-600">(core)</span>}
+                          {mod.category === 'core' && <span className="ml-2 text-xs text-turquoise-dark">(core)</span>}
                           {!mod.implemented && <span className="ml-2 text-xs text-gray-400">(bientôt)</span>}
                         </div>
                         <div className="text-xs text-gray-500">{mod.description}</div>

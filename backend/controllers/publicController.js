@@ -1,5 +1,80 @@
-const { Municipality, Category, Report, Support, sequelize } = require('../models');
+const { Municipality, Category, Report, ReportComment, StatusHistory, User, sequelize } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
+
+/**
+ * GET /api/public/reports/track/:code
+ * Recherche d'un signalement par tracking_code (sans authentification).
+ */
+exports.trackReport = async (req, res) => {
+  try {
+    const raw = (req.params.code || '').toUpperCase().trim();
+    if (!/^[A-Z0-9]{4,12}$/.test(raw)) {
+      return res.status(400).json({ success: false, message: 'Code de suivi invalide' });
+    }
+
+    const report = await Report.findOne({
+      where: { tracking_code: raw },
+      attributes: [
+        'id', 'tracking_code', 'title', 'description', 'status', 'address',
+        'created_at', 'resolved_at', 'closure_reason', 'closure_reason_details'
+      ],
+      include: [
+        { model: Category, as: 'category', attributes: ['id', 'name', 'icon', 'color'] },
+        { model: Municipality, as: 'municipality', attributes: ['id', 'name', 'slug'] }
+      ]
+    });
+
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Aucun signalement avec ce code' });
+    }
+
+    const [history, comments] = await Promise.all([
+      StatusHistory.findAll({
+        where: { report_id: report.id },
+        attributes: ['old_status', 'new_status', 'created_at', 'comment'],
+        order: [['created_at', 'ASC']]
+      }),
+      ReportComment.findAll({
+        where: { report_id: report.id, is_internal: false },
+        attributes: ['id', 'body', 'author_role', 'created_at'],
+        include: [{ model: User, as: 'author', attributes: ['full_name', 'role'] }],
+        order: [['created_at', 'ASC']]
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        report: {
+          tracking_code: report.tracking_code,
+          title: report.title,
+          status: report.status,
+          address: report.address,
+          created_at: report.created_at,
+          resolved_at: report.resolved_at,
+          closure_reason: report.closure_reason,
+          category: report.category,
+          municipality: report.municipality
+        },
+        history: history.map(h => ({
+          old_status: h.old_status,
+          new_status: h.new_status,
+          comment: h.comment,
+          created_at: h.created_at
+        })),
+        comments: comments.map(c => ({
+          body: c.body,
+          author_role: c.author_role,
+          author_name: c.author?.full_name || null,
+          created_at: c.created_at
+        }))
+      }
+    });
+  } catch (err) {
+    console.error('[publicController.trackReport]', err);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
 
 /**
  * GET /api/public/municipalities/:slug
@@ -27,7 +102,7 @@ exports.getMunicipalityPublicPage = async (req, res) => {
     const municipalityId = municipality.id;
 
     // Requêtes en parallèle
-    const [categories, statusCounts, recentReports] = await Promise.all([
+    const [categories, statusCounts, totalReports, recentResolved, recentReports] = await Promise.all([
       Category.findAll({
         where: { municipality_id: municipalityId, is_active: true },
         attributes: ['id', 'name', 'icon', 'color'],
@@ -37,11 +112,25 @@ exports.getMunicipalityPublicPage = async (req, res) => {
       Report.findAll({
         where: {
           municipality_id: municipalityId,
-          status: { [Op.in]: ['resolved', 'in_progress', 'assigned'] }
+          status: { [Op.in]: ['resolved', 'in_progress', 'assigned', 'completed'] }
         },
         attributes: ['status', [fn('COUNT', col('id')), 'count']],
         group: ['status'],
         raw: true
+      }),
+
+      // Total des signalements reçus (hors rejetés/doublons)
+      Report.count({
+        where: { municipality_id: municipalityId, status: { [Op.ne]: 'rejected' } }
+      }),
+
+      // Réalisations : derniers signalements résolus
+      Report.findAll({
+        where: { municipality_id: municipalityId, status: 'resolved' },
+        attributes: ['id', 'title', 'address', 'created_at', 'resolved_at'],
+        include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'icon', 'color'] }],
+        order: [['resolved_at', 'DESC']],
+        limit: 6
       }),
 
       Report.findAll({
@@ -52,7 +141,7 @@ exports.getMunicipalityPublicPage = async (req, res) => {
         attributes: [
           'id', 'title', 'status', 'priority_score', 'created_at',
           [
-            literal('(SELECT COUNT(*) FROM supports AS s WHERE s.report_id = "Report".id)'),
+            literal('(SELECT COUNT(*) FROM supports AS s WHERE s.report_id = `Report`.`id`)'),
             'supports_count'
           ]
         ],
@@ -72,8 +161,9 @@ exports.getMunicipalityPublicPage = async (req, res) => {
     for (const row of statusCounts) {
       const count = parseInt(row.count, 10) || 0;
       if (row.status === 'resolved') total_resolved += count;
-      else if (row.status === 'in_progress' || row.status === 'assigned') total_in_progress += count;
+      else if (['in_progress', 'assigned', 'completed'].includes(row.status)) total_in_progress += count;
     }
+    const resolution_rate = totalReports > 0 ? Math.round((total_resolved / totalReports) * 100) : 0;
 
     return res.json({
       success: true,
@@ -98,9 +188,19 @@ exports.getMunicipalityPublicPage = async (req, res) => {
           color: c.color
         })),
         stats: {
+          total_reports: totalReports,
           total_resolved,
-          total_in_progress
+          total_in_progress,
+          resolution_rate
         },
+        recent_resolved: recentResolved.map(r => ({
+          id: r.id,
+          title: r.title,
+          address: r.address,
+          resolved_at: r.resolved_at,
+          created_at: r.created_at,
+          category: r.category ? { id: r.category.id, name: r.category.name, icon: r.category.icon, color: r.category.color } : null
+        })),
         recent_reports: recentReports.map(r => {
           const supportsCount = parseInt(r.get('supports_count'), 10) || 0;
           return {

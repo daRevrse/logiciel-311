@@ -58,7 +58,7 @@ const MunicipalitySettings = () => {
     setLoading(true);
     try {
       const data = await adminService.getMunicipalitySettings();
-      const s = data?.data || data || {};
+      const s = data?.data?.municipality || data?.data || data || {};
       const hours = (s.public_hours && typeof s.public_hours === 'object') ? s.public_hours : DEFAULT_HOURS;
       const next = {
         primary_color: s.primary_color || '#1e40af',
@@ -223,7 +223,7 @@ const MunicipalitySettings = () => {
   return (
     <div className="pb-28 lg:pb-0">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Paramètres de la municipalité</h1>
+        <h1 className="text-2xl font-bold text-navy-deep dark:text-slate-50">Paramètres de la municipalité</h1>
         <p className="text-sm text-slate-500 mt-1">Personnalisez l'identité visuelle et les informations publiques.</p>
       </div>
 
@@ -239,7 +239,7 @@ const MunicipalitySettings = () => {
               onClick={() => setActiveTab(t.id)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 -mb-px ${
                 active
-                  ? 'border-primary text-primary'
+                  ? 'border-turquoise text-navy-deep'
                   : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
@@ -358,7 +358,7 @@ const MunicipalitySettings = () => {
                 value={form.address}
                 onChange={(e) => setField('address', e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30"
                 placeholder="123 rue de la Mairie, …"
               />
             </div>
@@ -369,7 +369,7 @@ const MunicipalitySettings = () => {
                   type="text"
                   value={form.contact_phone}
                   onChange={(e) => setField('contact_phone', e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30"
                   placeholder="+1 514 555 0123"
                 />
               </div>
@@ -379,7 +379,7 @@ const MunicipalitySettings = () => {
                   type="email"
                   value={form.contact_email}
                   onChange={(e) => setField('contact_email', e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30"
                   placeholder="contact@mairie.qc.ca"
                 />
               </div>
@@ -435,7 +435,7 @@ const MunicipalitySettings = () => {
                 type="text"
                 value={form.display_name}
                 onChange={(e) => setField('display_name', e.target.value)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-turquoise/30"
                 placeholder="Ville de …"
               />
             </div>
@@ -445,7 +445,7 @@ const MunicipalitySettings = () => {
                 value={form.public_description}
                 onChange={(e) => setField('public_description', e.target.value)}
                 rows={5}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-turquoise/30"
                 placeholder="Présentation de la municipalité, mission, etc."
               />
             </div>
@@ -456,7 +456,7 @@ const MunicipalitySettings = () => {
                 min={1}
                 value={form.priority_support_threshold}
                 onChange={(e) => setField('priority_support_threshold', Number(e.target.value))}
-                className="w-40 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-40 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-turquoise/30"
               />
               <p className="text-xs text-slate-500 mt-1">Nombre minimal d'appuis pour bascule en support prioritaire.</p>
             </div>
@@ -475,7 +475,7 @@ const MunicipalitySettings = () => {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-turquoise text-navy-deep text-sm font-semibold hover:bg-turquoise/90 disabled:opacity-60 transition"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Enregistrer

@@ -52,7 +52,27 @@
       "Bash(cp backend/routes/admin.routes.js /tmp/routes_b2.js)",
       "Bash(cp backend/middlewares/uploadMunicipalityImage.js /tmp/mw_b2.js)",
       "Bash(head -n 1361 backend/controllers/adminController.js)",
-      "Bash(mv /tmp/ctrl_b1.js backend/controllers/adminController.js)"
+      "Bash(mv /tmp/ctrl_b1.js backend/controllers/adminController.js)",
+      "Bash(grep -n \"m/\\\\${\\\\|/m/\\\\|Voir la page\\\\|MunicipalityPublicPage\" src/pages/citizen/PublicReport.jsx src/pages/public/MunicipalityPublicPage.jsx)",
+      "Bash(node -c server.js)",
+      "Bash(node -c services/realtimeService.js)",
+      "Bash(node -c services/adminService.js)",
+      "Bash(node -c controllers/commentController.js)",
+      "Bash(node -c jobs/slaEscalationJob.js)",
+      "Bash(npx vite *)",
+      "Bash(node -c controllers/agentController.js)",
+      "Bash(node -c controllers/interventionController.js)",
+      "Bash(node -c services/agentSuggestionService.js)",
+      "Bash(node -c routes/agent.routes.js)",
+      "Bash(node -c models/User.js)",
+      "Bash(node -c controllers/agentAdminController.js)",
+      "Bash(cat /tmp/claude/C--Users-Administrateur-logiciel-311/16d8cdcf-eb37-40df-bd0d-025b37e15249/tasks/baq61lw8n.output 2>&1 | tail -10)",
+      "Bash(node -c controllers/authController.js)",
+      "Bash(node -c controllers/publicController.js)",
+      "Bash(node -c routes/auth.routes.js)",
+      "Bash(node -c routes/public.routes.js)",
+      "Bash(node -c models/Report.js)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri 'https://picsum.photos/seed/muno/400/300' -Method Get -TimeoutSec 20 -MaximumRedirection 5 -ErrorAction Stop; \"PICSUM OK $\\($r.StatusCode\\) $\\($r.Headers['Content-Type']\\)\" } catch { \"PICSUM BAD $\\($_.Exception.Message\\)\" })"
     ]
   }
 }

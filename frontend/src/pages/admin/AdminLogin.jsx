@@ -13,7 +13,7 @@ import { resolveImageUrl } from '../../utils/url';
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { municipalitySlug } = useParams();
-  const { loginAdmin, isAuthenticated, isAdmin, isAgent } = useAuth();
+  const { loginAdmin, isAuthenticated, isAdmin, isSuperAdmin, isAgent } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -41,10 +41,12 @@ const AdminLogin = () => {
   useEffect(() => {
     if (isAuthenticated && isAgent()) {
       navigate('/agent');
+    } else if (isAuthenticated && isSuperAdmin()) {
+      navigate('/admin/system');
     } else if (isAuthenticated && isAdmin()) {
       navigate('/admin/dashboard');
     }
-  }, [isAuthenticated, isAdmin, isAgent, navigate]);
+  }, [isAuthenticated, isAdmin, isSuperAdmin, isAgent, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +60,8 @@ const AdminLogin = () => {
       toast.success('Accès autorisé ! Bienvenue dans la console.');
       if (response?.user?.role === 'agent') {
         navigate('/agent');
+      } else if (response?.user?.role === 'super_admin') {
+        navigate('/admin/system');
       } else {
         navigate('/admin/dashboard');
       }
@@ -98,7 +102,7 @@ const AdminLogin = () => {
           <div>
             <div className="flex items-center gap-4 mb-14 animate-in fade-in slide-in-from-left-4 duration-700">
               <div className="w-20 h-20 rounded-[2.5rem] bg-white flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden p-3 transform transition-transform hover:scale-105">
-                <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-contain" />
+                <img src="/logo_muno.png" alt="Muno Logo" className="h-full w-full object-contain" />
               </div>
               <div>
                 <h1 className="text-4xl font-black text-white tracking-tighter leading-none mb-1">Muno</h1>
@@ -142,10 +146,10 @@ const AdminLogin = () => {
           {/* Mobile Header (Only visible on small screens) */}
           <div className="lg:hidden flex flex-col items-center mb-10 text-center">
             <div className="w-24 h-24 rounded-[3rem] bg-white flex items-center justify-center shadow-2xl shadow-primary/20 mb-6 overflow-hidden border border-slate-100 p-4">
-              <img src="/icone.png" alt="Muno Logo" className="h-full w-full object-contain" />
+              <img src="/logo_muno.png" alt="Muno Logo" className="h-full w-full object-contain" />
             </div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-1">Muno Admin</h1>
-            <p className="text-slate-500 font-medium">Accès confidentiel réservé à la mairie</p>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-1">Muno Pro</h1>
+            <p className="text-slate-500 font-medium">Accès réservé au personnel municipal</p>
           </div>
 
           {/* Form Header */}
@@ -171,7 +175,7 @@ const AdminLogin = () => {
                 </div>
               )}
               <div>
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Espace administrateur</p>
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Espace professionnel</p>
                 <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Mairie de {municipality.name}</p>
               </div>
             </div>

@@ -133,7 +133,7 @@ const AgentFormModal = ({ open, onClose, onSaved, mode = 'create', initialAgent 
                 />
                 <button
                   onClick={copyPassword}
-                  className="px-3 py-2 rounded-lg bg-primary text-white flex items-center gap-2 text-sm font-semibold hover:bg-primary/90"
+                  className="px-3 py-2 rounded-lg bg-turquoise text-navy-deep flex items-center gap-2 text-sm font-semibold hover:bg-turquoise/90"
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   {copied ? 'Copié' : 'Copier'}
@@ -187,7 +187,7 @@ const AgentFormModal = ({ open, onClose, onSaved, mode = 'create', initialAgent 
                         type="checkbox"
                         checked={specializations.includes(cat.id)}
                         onChange={() => toggleSpec(cat.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-slate-300 text-turquoise focus:ring-turquoise"
                       />
                       {cat.color && (
                         <span
@@ -220,7 +220,7 @@ const AgentFormModal = ({ open, onClose, onSaved, mode = 'create', initialAgent 
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60"
+                className="px-4 py-2 rounded-lg bg-turquoise text-navy-deep text-sm font-semibold hover:bg-turquoise/90 disabled:opacity-60"
               >
                 {submitting ? 'Enregistrement…' : (mode === 'create' ? 'Créer' : 'Enregistrer')}
               </button>

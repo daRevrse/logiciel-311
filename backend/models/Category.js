@@ -48,6 +48,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       field: 'display_order'
+    },
+    sla_hours: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 72,
+      field: 'sla_hours',
+      validate: {
+        min: { args: [1], msg: 'SLA minimum 1h' },
+        max: { args: [8760], msg: 'SLA maximum 8760h (1 an)' }
+      }
     }
   }, {
     tableName: 'categories',

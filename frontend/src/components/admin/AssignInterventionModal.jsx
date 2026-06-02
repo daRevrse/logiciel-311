@@ -71,7 +71,7 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
+            <Briefcase className="h-5 w-5 text-turquoise" />
             <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Créer une intervention</h3>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -102,11 +102,11 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
                       onClick={() => setSelectedAgentId(a.id)}
                       className={`w-full text-left flex items-center gap-3 px-3 py-3 rounded-xl border transition-all ${
                         selected
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary/30'
+                          ? 'border-turquoise bg-turquoise/5 ring-2 ring-turquoise/30'
                           : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       }`}
                     >
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${selected ? 'bg-primary text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${selected ? 'bg-turquoise text-navy-deep' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                         <User className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -118,11 +118,18 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          Charge actuelle : <span className="font-semibold">{a.workload ?? 0}</span>
-                          {Array.isArray(a.specializations) && a.specializations.length > 0 && (
-                            <span className="ml-2 text-slate-400">
-                              {a.specializations.map((s) => s.name || s).join(', ')}
+                        <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                            Charge {a.workload ?? 0}
+                          </span>
+                          {a.distance_km !== null && a.distance_km !== undefined && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                              {a.distance_km} km
+                            </span>
+                          )}
+                          {typeof a.score === 'number' && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-semibold">
+                              Score {a.score}
                             </span>
                           )}
                         </p>
@@ -142,7 +149,7 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
             />
           </div>
 
@@ -154,7 +161,7 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
               placeholder="Précisions pour l'agent…"
             />
           </div>
@@ -177,7 +184,7 @@ const AssignInterventionModal = ({ open, onClose, reportId, onCreated }) => {
             <button
               type="submit"
               disabled={submitting || !selectedAgentId}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-turquoise text-navy-deep hover:bg-turquoise/90 disabled:opacity-50 disabled:pointer-events-none"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               Créer l'intervention

@@ -115,6 +115,24 @@ export const AuthProvider = ({ children }) => {
     return authService.isAgent();
   };
 
+  const registerByEmail = async (payload) => {
+    const data = await authService.registerByEmail(payload);
+    if (data?.user) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+    }
+    return data;
+  };
+
+  const loginByEmail = async (email, password) => {
+    const data = await authService.loginByEmail(email, password);
+    if (data?.user) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+    }
+    return data;
+  };
+
   const value = {
     user,
     loading,
@@ -126,6 +144,8 @@ export const AuthProvider = ({ children }) => {
     requestSmsCode,
     verifyCode,
     loginAdmin,
+    registerByEmail,
+    loginByEmail,
     logout,
     isAdmin,
     isSuperAdmin,

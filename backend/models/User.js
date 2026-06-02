@@ -59,7 +59,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       get() {
         const value = this.getDataValue('specializations');
-        return value == null ? [] : value;
+        if (value == null) return [];
+        if (Array.isArray(value)) return value;
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        }
+        return [];
       },
       set(value) {
         if (value === null || value === undefined) {
@@ -80,6 +90,16 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: true,
       field: 'is_active'
     },
+    home_latitude: {
+      type: DataTypes.DECIMAL(10, 8),
+      allowNull: true,
+      field: 'home_latitude'
+    },
+    home_longitude: {
+      type: DataTypes.DECIMAL(11, 8),
+      allowNull: true,
+      field: 'home_longitude'
+    },
     last_login: {
       type: DataTypes.DATE,
       field: 'last_login'
@@ -91,6 +111,31 @@ module.exports = (sequelize, DataTypes) => {
     verification_expires_at: {
       type: DataTypes.DATE,
       field: 'verification_expires_at'
+    },
+    email_verified_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'email_verified_at'
+    },
+    email_verification_token: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      field: 'email_verification_token'
+    },
+    password_reset_token: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      field: 'password_reset_token'
+    },
+    password_reset_expires_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'password_reset_expires_at'
+    },
+    notification_preferences: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: 'notification_preferences'
     }
   }, {
     tableName: 'users',

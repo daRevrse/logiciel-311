@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Users, AlertCircle, Key, ShieldCheck, TrendingUp, Clock } from 'lucide-react';
 import adminService from '../../services/adminService';
-import { Spinner } from '../../components/common';
+import { Spinner, StatusBadge } from '../../components/common';
 import toast from 'react-hot-toast';
+
+const ROLE_LABELS = { citizen: 'Citoyens', agent: 'Agents', admin: 'Administrateurs', super_admin: 'Super admins' };
 
 const Kpi = ({ label, value, icon: Icon, tone = 'primary' }) => {
   const tones = {
-    primary: 'bg-primary/10 text-primary',
+    primary: 'bg-turquoise/10 text-turquoise-dark',
     emerald: 'bg-emerald-50 text-emerald-600',
     amber: 'bg-amber-50 text-amber-600',
     rose: 'bg-rose-50 text-rose-600',
@@ -18,7 +20,7 @@ const Kpi = ({ label, value, icon: Icon, tone = 'primary' }) => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-          <p className="text-3xl font-extrabold text-slate-900 dark:text-slate-50">{value ?? 0}</p>
+          <p className="text-3xl font-extrabold text-navy-deep dark:text-slate-50">{value ?? 0}</p>
         </div>
         <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${tones[tone]}`}>
           <Icon className="h-6 w-6" />
@@ -61,7 +63,7 @@ const SuperAdminDashboard = () => {
         <div className="flex items-center gap-2 text-amber-600 font-black text-xs uppercase tracking-[0.2em] mb-2">
           <ShieldCheck className="h-4 w-4" /> Vue Globale Système
         </div>
-        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+        <h1 className="text-4xl font-extrabold text-navy-deep dark:text-slate-100 tracking-tight">
           Supervision multi-mairies
         </h1>
         <p className="text-slate-500 mt-2 text-lg">
@@ -78,30 +80,30 @@ const SuperAdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">Signalements par statut</h2>
+          <h2 className="text-xl font-bold text-navy-deep dark:text-slate-50 mb-4">Signalements par statut</h2>
           <div className="space-y-3">
             {Object.entries(byStatus).length === 0 && (
               <p className="text-sm text-slate-400">Aucune donnée.</p>
             )}
             {Object.entries(byStatus).map(([status, count]) => (
               <div key={status} className="flex items-center justify-between">
-                <span className="text-sm font-bold uppercase tracking-widest text-slate-500">{status}</span>
-                <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{count}</span>
+                <StatusBadge status={status} size="sm" />
+                <span className="text-lg font-extrabold text-navy-deep dark:text-slate-100">{count}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-4">Utilisateurs par rôle</h2>
+          <h2 className="text-xl font-bold text-navy-deep dark:text-slate-50 mb-4">Utilisateurs par rôle</h2>
           <div className="space-y-3">
             {Object.entries(usersByRole).map(([role, count]) => (
               <div key={role} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-slate-400" />
-                  <span className="text-sm font-bold uppercase tracking-widest text-slate-500">{role}</span>
+                  <span className="text-sm font-semibold text-slate-600">{ROLE_LABELS[role] || role}</span>
                 </div>
-                <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{count}</span>
+                <span className="text-lg font-extrabold text-navy-deep dark:text-slate-100">{count}</span>
               </div>
             ))}
           </div>
@@ -110,10 +112,10 @@ const SuperAdminDashboard = () => {
 
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">Top mairies par volume</h2>
+          <h2 className="text-xl font-bold text-navy-deep dark:text-slate-50">Top mairies par volume</h2>
           <button
             onClick={() => navigate('/admin/municipalities')}
-            className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
+            className="text-sm font-bold text-turquoise-dark hover:underline flex items-center gap-1"
           >
             Voir toutes <TrendingUp className="h-4 w-4" />
           </button>
@@ -130,7 +132,7 @@ const SuperAdminDashboard = () => {
                 </span>
                 <span className="font-bold text-slate-700 dark:text-slate-300">{m.name}</span>
               </div>
-              <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{m.count}</span>
+              <span className="text-lg font-extrabold text-navy-deep dark:text-slate-100">{m.count}</span>
             </div>
           ))}
         </div>

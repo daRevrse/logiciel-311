@@ -126,6 +126,15 @@ const reportService = {
   },
 
   /**
+   * Récupérer les statistiques des signalements de la municipalité courante
+   * @returns {Promise<Object>} { total, byStatus, percentageResolved }
+   */
+  async getStatistics() {
+    const response = await api.get('/reports/statistics');
+    return response.data;
+  },
+
+  /**
    * Récupérer les municipalités actives pour le signalement public
    * @returns {Promise<Array>}
    */
@@ -144,6 +153,19 @@ const reportService = {
   async searchByLocation(latitude, longitude, radius = 5) {
     const response = await api.get('/reports/nearby', {
       params: { latitude, longitude, radius }
+    });
+    return response.data;
+  },
+
+  async listComments(reportId) {
+    const response = await api.get(`/reports/${reportId}/comments`);
+    return response.data;
+  },
+
+  async addComment(reportId, body) {
+    const response = await api.post(`/reports/${reportId}/comments`, {
+      body,
+      is_internal: false
     });
     return response.data;
   }

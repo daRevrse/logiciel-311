@@ -28,11 +28,11 @@ api.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      if (isAdminPath) {
-        window.location.href = '/admin/login';
-      } else {
-        window.location.href = '/login';
-      }
+      // if (isAdminPath) {
+      //   window.location.href = '/admin/login';
+      // } else {
+      //   window.location.href = '/login';
+      // }
     }
     return Promise.reject(error);
   }

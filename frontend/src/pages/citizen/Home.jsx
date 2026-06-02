@@ -1,155 +1,191 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MapPin, Plus, Filter, ThumbsUp } from 'lucide-react';
+import { Plus, Search, MapPin, ThumbsUp, Activity } from 'lucide-react';
 import { useReports } from '../../hooks/useReports';
-import { useSupports } from '../../hooks/useSupports';
-import { Button, Card, StatusBadge, Spinner } from '../../components/common';
+import { StatusBadge, Spinner, HeroBackground, ImageWithFallback } from '../../components/common';
+import { IMAGES } from '../../config/images';
+import { formatShortDate, reportDate } from '../../utils/date';
+import { useAuth } from '../../contexts/AuthContext';
+
+const STATUS_FILTERS = [
+  { value: '', label: 'Tous' },
+  { value: 'pending', label: 'En attente' },
+  { value: 'in_progress', label: 'En cours' },
+  { value: 'resolved', label: 'Résolus' },
+];
+
+const PAGE_SIZE = 10;
 
 /**
- * Page d'accueil citoyenne - Vue split carte/liste des signalements
+ * Accueil citoyen — flux unique de tous les signalements de la commune.
+ * Fusion de l'ancien Home et de ReportsList : simple, mobile-first,
+ * avec recherche, filtre de statut et chargement progressif.
  */
 const Home = () => {
   const navigate = useNavigate();
-  const { reports, loading, loadReports } = useReports({}, true);
-  const { getTopSupported } = useSupports();
+  const { user } = useAuth();
+  const { reports, loading, pagination, loadReports } = useReports({}, false);
 
-  const [activeTab, setActiveTab] = useState('list');
-  const [topReports, setTopReports] = useState([]);
-  const [filters, setFilters] = useState({
-    status: '',
-    search: ''
-  });
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
+  // Recharge le flux quand un critère change (avec anti-rebond sur la recherche)
   useEffect(() => {
-    loadTopReports();
-  }, []);
+    const t = setTimeout(() => {
+      loadReports({
+        search: search.trim() || undefined,
+        status: status || undefined,
+        sortBy: 'created_at',
+        sortOrder: 'DESC',
+        page: 1,
+        limit,
+      });
+    }, search ? 400 : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, status, limit]);
 
-  const loadTopReports = async () => {
-    try {
-      const data = await getTopSupported(5);
-      setTopReports(data);
-    } catch (error) {
-      console.error('Erreur chargement top signalements:', error);
-    }
-  };
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const applyFilters = () => {
-    loadReports(filters);
-  };
+  const total = pagination?.total ?? pagination?.totalReports ?? reports.length;
+  const canLoadMore = !loading && reports.length < total;
 
   return (
-    <div className="flex h-[calc(100vh-64px)]">
-      {/* Liste — full mobile, 40% desktop */}
-      <div className="w-full lg:w-2/5 overflow-y-auto border-r border-gray-200 bg-white flex flex-col">
-        {/* Tabs mobile Liste/Carte */}
-        <div className="lg:hidden flex border-b border-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`flex-1 py-3 text-sm font-medium ${activeTab === 'list' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
+    <div className="min-h-screen bg-surface">
+      {/* En-tête : salutation + action principale */}
+      <div className="relative overflow-hidden bg-navy-deep text-white">
+        <HeroBackground image={IMAGES.heroCity} opacity={0.25} />
+        <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-16">
+          <p className="text-turquoise font-semibold text-sm">
+            {user?.municipality?.name || 'Votre commune'}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
+            Bonjour, {user?.full_name?.split(' ')[0] || 'Citoyen'}
+          </h1>
+
+          <Link
+            to="/reports/create"
+            className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-4 bg-turquoise text-navy-deep font-bold rounded-2xl shadow-lg shadow-turquoise/20 active:scale-[0.98] transition-transform"
           >
-            Liste
-          </button>
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`flex-1 py-3 text-sm font-medium ${activeTab === 'map' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
-          >
-            Carte
-          </button>
+            <Plus className="h-5 w-5" />
+            Nouveau signalement
+          </Link>
+        </div>
+      </div>
+
+      {/* Flux des signalements */}
+      <div className="max-w-2xl mx-auto px-4 -mt-8 pb-24">
+        {/* Recherche */}
+        <div className="relative mb-3">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setLimit(PAGE_SIZE); }}
+            placeholder="Rechercher un signalement..."
+            className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-100 rounded-2xl text-sm shadow-sm focus:ring-2 focus:ring-turquoise focus:border-transparent outline-none transition-all"
+          />
         </div>
 
-        {/* Filtres */}
-        <div className={`flex-shrink-0 p-4 border-b border-gray-100 ${activeTab === 'map' ? 'hidden lg:block' : ''}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Filtres</span>
-          </div>
-          <div className="flex gap-2">
-            <select
-              name="status"
-              value={filters.status}
-              onChange={handleFilterChange}
-              className="input-field text-sm flex-1"
+        {/* Filtres de statut */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1 scrollbar-none">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setStatus(f.value); setLimit(PAGE_SIZE); }}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                status === f.value
+                  ? 'bg-navy-deep text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-turquoise'
+              }`}
             >
-              <option value="">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="confirmed">Confirmé</option>
-              <option value="in_progress">En cours</option>
-              <option value="resolved">Résolu</option>
-              <option value="rejected">Rejeté</option>
-            </select>
-            <input
-              type="text"
-              name="search"
-              value={filters.search}
-              onChange={handleFilterChange}
-              placeholder="Rechercher..."
-              className="input-field text-sm flex-1"
-            />
-            <Button variant="primary" size="sm" onClick={applyFilters}>
-              OK
-            </Button>
-          </div>
+              {f.label}
+            </button>
+          ))}
         </div>
 
-        {/* Liste des signalements — cachée sur mobile si tab=map */}
-        <div className={`flex-1 overflow-y-auto ${activeTab === 'map' ? 'hidden lg:block' : ''}`}>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : reports.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-sm">Aucun signalement trouvé</p>
-            </div>
-          ) : (
-            reports.map((report) => (
-              <div
-                key={report.id}
-                className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/reports/${report.id}`)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm truncate">{report.title}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{report.address || report.location}</p>
+        {loading && reports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Spinner size="lg" />
+            <p className="text-sm text-gray-500">Chargement…</p>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="text-center py-12">
+            <ImageWithFallback
+              src={IMAGES.emptyReports}
+              alt=""
+              className="w-36 h-36 rounded-3xl mx-auto mb-5 shadow-lg"
+            >
+              <Activity className="h-10 w-10 text-white/70" />
+            </ImageWithFallback>
+            <p className="text-navy-deep font-bold">Aucun signalement</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {search || status ? 'Aucun résultat pour ces critères.' : 'Soyez le premier à signaler un problème.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {reports.map((report) => (
+                <button
+                  key={report.id}
+                  onClick={() => navigate(`/reports/${report.id}`)}
+                  className="w-full text-left bg-white border border-gray-100 rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-transform relative overflow-hidden"
+                >
+                  {/* Liseré de statut */}
+                  <div
+                    className={`absolute top-0 bottom-0 left-0 w-1.5 ${
+                      report.status === 'resolved'
+                        ? 'bg-emerald-500'
+                        : report.status === 'completed'
+                        ? 'bg-cyan-500'
+                        : report.status === 'in_progress'
+                        ? 'bg-amber-500'
+                        : report.status === 'assigned'
+                        ? 'bg-blue-500'
+                        : 'bg-slate-300'
+                    }`}
+                  />
+                  <div className="flex items-start justify-between gap-3 pl-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-turquoise bg-turquoise/10 px-2 py-0.5 rounded">
+                          {report.category?.name || 'Général'}
+                        </span>
+                        <span className="text-[10px] font-medium text-gray-400">
+                          {formatShortDate(reportDate(report))}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-navy-deep leading-snug truncate">{report.title}</h3>
+                      <div className="flex items-center gap-1.5 mt-1.5 text-gray-500">
+                        <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="text-xs truncate">{report.address}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <StatusBadge status={report.status} />
+                      <div className="flex items-center gap-1 text-gray-500">
+                        <ThumbsUp className="h-3.5 w-3.5 text-turquoise" />
+                        <span className="text-sm font-bold text-navy-deep">
+                          {report.supportsCount ?? report.supports_count ?? 0}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <StatusBadge status={report.status} size="sm" />
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">{report.category?.name}</span>
-                  <span className="inline-flex items-center gap-1 text-[#2BB673] font-semibold text-sm">
-                    <ThumbsUp className="h-3.5 w-3.5" />{report.supports_count || 0}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+                </button>
+              ))}
+            </div>
 
-      {/* Carte — cachée sur mobile si tab=list */}
-      <div className={`lg:flex-1 ${activeTab === 'list' ? 'hidden lg:block' : 'flex-1'}`}>
-        <div className="h-full bg-gray-100 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <MapPin className="h-12 w-12 mx-auto mb-2" />
-            <p>Carte interactive (Leaflet)</p>
-          </div>
-        </div>
+            {canLoadMore && (
+              <button
+                onClick={() => setLimit((l) => l + PAGE_SIZE)}
+                className="mt-5 w-full py-3.5 rounded-2xl bg-white border border-gray-200 text-navy-deep font-bold text-sm hover:border-turquoise transition-colors"
+              >
+                Voir plus de signalements
+              </button>
+            )}
+          </>
+        )}
       </div>
-
-      {/* FAB — nouveau signalement */}
-      <Link
-        to="/reports/create"
-        className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-20 h-14 w-14 rounded-full bg-[#2BB673] text-white shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity"
-        aria-label="Nouveau signalement"
-      >
-        <Plus className="h-7 w-7" />
-      </Link>
     </div>
   );
 };

@@ -14,6 +14,15 @@ const publicMunicipalityService = {
     const response = await api.get(`/public/municipalities/${slug}`);
     return response.data;
   },
+
+  /**
+   * Recherche un signalement par son code de suivi (sans authentification).
+   * @param {string} code
+   */
+  async trackReport(code) {
+    const response = await api.get(`/public/reports/track/${encodeURIComponent(code)}`);
+    return response.data;
+  }
 };
 
 export default publicMunicipalityService;

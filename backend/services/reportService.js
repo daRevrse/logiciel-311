@@ -588,7 +588,7 @@ class ReportService {
     try {
       const municipalities = await Municipality.findAll({
         where: { is_active: true },
-        attributes: ['id', 'name', 'region', 'logo_url'],
+        attributes: ['id', 'name', 'slug', 'region', 'logo_url'],
         order: [['name', 'ASC']]
       });
       return municipalities;

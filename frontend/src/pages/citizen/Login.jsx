@@ -1,33 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Button, Input } from '../../components/common';
-import { Smartphone, Fingerprint, MapPin, ThumbsUp, ArrowLeft } from 'lucide-react';
+import { Button, Input, AuthShell } from '../../components/common';
+import reportService from '../../services/reportService';
+import { Mail, Smartphone, Fingerprint, Building2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const METHODS = [
+  { key: 'email', label: 'Email', icon: Mail },
+  { key: 'fingerprint', label: 'Appareil', icon: Fingerprint },
+  { key: 'sms', label: 'SMS', icon: Smartphone },
+];
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loginByFingerprint, requestSmsCode, verifyCode, isAuthenticated } = useAuth();
+  const { loginByEmail, loginByFingerprint, requestSmsCode, verifyCode, isAuthenticated } = useAuth();
 
-  const [authMethod, setAuthMethod] = useState('fingerprint');
-  const [step, setStep] = useState(1);
+  const [authMethod, setAuthMethod] = useState('email');
+  const [step, setStep] = useState(1); // pour SMS : 1 = demande, 2 = vérification
   const [loading, setLoading] = useState(false);
+  const [municipalities, setMunicipalities] = useState([]);
+  const [deviceFingerprint, setDeviceFingerprint] = useState('');
 
   const [formData, setFormData] = useState({
-    municipalityId: '1',
+    municipalityId: '',
     fullName: '',
+    email: '',
+    password: '',
     phone: '',
     code: ''
   });
 
-  const [deviceFingerprint, setDeviceFingerprint] = useState('');
+  const needsMunicipality = authMethod === 'fingerprint' || authMethod === 'sms';
+
+  // Charger les municipalités (nécessaire pour device/SMS)
+  useEffect(() => {
+    reportService.getPublicMunicipalities()
+      .then((res) => {
+        const list = res.data || res || [];
+        setMunicipalities(list);
+        if (list.length > 0) {
+          setFormData((prev) => (prev.municipalityId ? prev : { ...prev, municipalityId: String(list[0].id) }));
+        }
+      })
+      .catch((err) => console.error('Erreur chargement municipalités:', err));
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) navigate('/');
 
     const generateFingerprint = async () => {
       try {
-        const fingerprint = [
+        const raw = [
           navigator.userAgent,
           navigator.language,
           screen.width,
@@ -36,58 +60,64 @@ const Login = () => {
           new Date().getTimezoneOffset(),
           navigator.hardwareConcurrency || 'unknown'
         ].join('|');
-
-        const hash = await crypto.subtle.digest(
-          'SHA-256',
-          new TextEncoder().encode(fingerprint)
-        );
-        const hashArray = Array.from(new Uint8Array(hash));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+        const hashHex = Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
         setDeviceFingerprint(hashHex);
       } catch (error) {
         console.error('Erreur génération fingerprint:', error);
-        setDeviceFingerprint(
-          `fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        );
+        setDeviceFingerprint(`fallback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
       }
     };
-
     generateFingerprint();
   }, [isAuthenticated, navigate]);
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const set = (name) => (e) => setFormData({ ...formData, [name]: e.target.value });
+
+  const switchMethod = (key) => {
+    setAuthMethod(key);
+    setStep(1);
   };
 
-  const handleFingerprintLogin = async (e) => {
+  // --- Email / mot de passe ---
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
-    if (!formData.fullName.trim()) {
-      toast.error('Veuillez entrer votre nom complet');
-      return;
-    }
-    if (!deviceFingerprint) {
-      toast.error("Impossible de générer l'empreinte de l'appareil");
-      return;
+    if (!formData.email.trim() || !formData.password) {
+      return toast.error('Email et mot de passe requis');
     }
     setLoading(true);
     try {
-      const data = await loginByFingerprint(
-        formData.municipalityId,
-        deviceFingerprint,
-        formData.fullName
-      );
-      toast.success(data.isNewUser ? 'Bienvenue ! Compte créé.' : 'Connexion réussie !');
+      await loginByEmail(formData.email.trim(), formData.password);
+      toast.success('Connexion réussie !');
       navigate('/');
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 'Erreur lors de la connexion';
-      toast.error(errorMsg);
+      toast.error(error.response?.data?.message || 'Identifiants invalides');
     } finally {
       setLoading(false);
     }
   };
 
+  // --- Appareil (fingerprint) ---
+  const handleFingerprintLogin = async (e) => {
+    e.preventDefault();
+    if (!formData.municipalityId) return toast.error('Veuillez sélectionner votre municipalité');
+    if (!formData.fullName.trim()) return toast.error('Veuillez entrer votre nom complet');
+    if (!deviceFingerprint) return toast.error("Impossible de générer l'empreinte de l'appareil");
+    setLoading(true);
+    try {
+      const data = await loginByFingerprint(formData.municipalityId, deviceFingerprint, formData.fullName);
+      toast.success(data.isNewUser ? 'Bienvenue ! Compte créé.' : 'Connexion réussie !');
+      navigate('/');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Erreur lors de la connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- SMS ---
   const handleRequestSmsCode = async (e) => {
     e.preventDefault();
+    if (!formData.municipalityId) return toast.error('Veuillez sélectionner votre municipalité');
     if (!formData.fullName.trim()) return toast.error('Veuillez entrer votre nom complet');
     if (!formData.phone.trim()) return toast.error('Veuillez entrer votre numéro de téléphone');
     setLoading(true);
@@ -118,180 +148,104 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col lg:flex-row">
-      {/* Hero gauche (desktop) / haut (mobile) */}
-      <div className="relative lg:w-1/2 bg-gradient-to-br from-[#1E3A5F] to-primary-600 text-white p-8 lg:p-16 flex flex-col justify-between overflow-hidden">
-        <div>
+    <AuthShell>
+      <div className="bg-white rounded-2xl shadow-xl shadow-navy-deep/5 border border-gray-100 p-8">
+        <h3 className="text-2xl font-black text-navy-deep tracking-tight">Se connecter</h3>
+        <p className="text-sm text-gray-500 mt-1 mb-6">Accédez à votre espace citoyen Muno</p>
+
+        {/* Sélecteur de méthode */}
+        <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 rounded-xl mb-6">
+          {METHODS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => switchMethod(key)}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                authMethod === key ? 'bg-white text-navy-deep shadow-sm' : 'text-gray-500 hover:text-navy-deep'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Municipalité (device / SMS uniquement) */}
+        {needsMunicipality && municipalities.length > 0 && (
+          <div className="mb-5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Votre municipalité</label>
+            <div className="relative">
+              <Building2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <select
+                value={formData.municipalityId}
+                onChange={set('municipalityId')}
+                className="w-full pl-9 pr-3 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-turquoise/30 focus:border-turquoise"
+              >
+                {municipalities.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Méthode Email */}
+        {authMethod === 'email' && (
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <Input label="Email" type="email" name="email" value={formData.email} onChange={set('email')} placeholder="vous@exemple.com" required />
+            <Input label="Mot de passe" type="password" name="password" value={formData.password} onChange={set('password')} placeholder="Votre mot de passe" required />
+            <Button type="submit" variant="primary" fullWidth loading={loading}>Se connecter</Button>
+          </form>
+        )}
+
+        {/* Méthode Appareil */}
+        {authMethod === 'fingerprint' && (
+          <form onSubmit={handleFingerprintLogin} className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Connexion rapide via cet appareil. À votre première connexion, un compte est créé automatiquement.
+            </p>
+            <Input label="Nom complet" type="text" name="fullName" value={formData.fullName} onChange={set('fullName')} placeholder="Votre nom complet" required />
+            <Button type="submit" variant="primary" fullWidth loading={loading}>Continuer avec cet appareil</Button>
+          </form>
+        )}
+
+        {/* Méthode SMS */}
+        {authMethod === 'sms' && step === 1 && (
+          <form onSubmit={handleRequestSmsCode} className="space-y-4">
+            <p className="text-sm text-gray-500">Recevez un code de vérification par SMS.</p>
+            <Input label="Nom complet" type="text" name="fullName" value={formData.fullName} onChange={set('fullName')} placeholder="Votre nom complet" required />
+            <Input label="Numéro de téléphone" type="tel" name="phone" value={formData.phone} onChange={set('phone')} placeholder="+228 XX XX XX XX" required />
+            <Button type="submit" variant="primary" fullWidth loading={loading}>Recevoir le code</Button>
+          </form>
+        )}
+
+        {authMethod === 'sms' && step === 2 && (
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <p className="text-sm text-gray-500">Code envoyé au <strong className="text-navy-deep">{formData.phone}</strong></p>
+            <Input label="Code de vérification" type="text" name="code" value={formData.code} onChange={set('code')} placeholder="Code à 6 chiffres" maxLength={6} required />
+            <Button type="submit" variant="primary" fullWidth loading={loading}>Vérifier et se connecter</Button>
+            <Button type="button" variant="ghost" fullWidth onClick={() => setStep(1)}>Modifier le numéro</Button>
+          </form>
+        )}
+
+        <div className="mt-6 pt-6 border-t border-gray-100 space-y-3">
+          <p className="text-center text-sm text-gray-500">
+            Pas encore de compte ?{' '}
+            <Link to="/register" className="text-turquoise font-bold hover:underline">Créer un compte</Link>
+          </p>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm mb-10"
+            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
+            <MapPin className="h-5 w-5 text-turquoise" />
+            <div className="text-left">
+              <p className="text-sm font-bold text-navy-deep">Signaler sans compte</p>
+              <p className="text-xs text-gray-500">Rapide et anonyme</p>
+            </div>
           </Link>
-
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center p-2">
-              <img src="/icone.png" alt="Muno" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold leading-none">Muno</h1>
-              <p className="text-xs text-white/70 mt-1">Signalement citoyen</p>
-            </div>
-          </div>
-
-          <h2 className="text-3xl lg:text-4xl font-bold leading-tight mb-4 max-w-md">
-            Ma ville à portée de main.
-          </h2>
-          <p className="text-white/80 max-w-md leading-relaxed">
-            Signalez un problème, suivez son traitement, appuyez les signalements qui comptent pour vous.
-          </p>
-        </div>
-
-        <div className="hidden lg:flex gap-6 mt-12">
-          <div className="flex items-center gap-2 text-sm text-white/80">
-            <MapPin className="h-4 w-4 text-support-light" />
-            Localisation précise
-          </div>
-          <div className="flex items-center gap-2 text-sm text-white/80">
-            <ThumbsUp className="h-4 w-4 text-support-light" />
-            Appui citoyen
-          </div>
         </div>
       </div>
-
-      {/* Formulaire droite */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
-        <div className="bg-white rounded-[12px] shadow-card w-full max-w-md p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Se connecter</h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Accédez à votre espace citoyen
-          </p>
-
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => { setAuthMethod('fingerprint'); setStep(1); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-colors ${
-                authMethod === 'fingerprint'
-                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Fingerprint className="h-5 w-5" />
-              <span className="font-medium">Appareil</span>
-            </button>
-
-            <button
-              onClick={() => { setAuthMethod('sms'); setStep(1); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border-2 transition-colors ${
-                authMethod === 'sms'
-                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                  : 'border-gray-200 text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Smartphone className="h-5 w-5" />
-              <span className="font-medium">SMS</span>
-            </button>
-          </div>
-
-          {authMethod === 'fingerprint' && (
-            <form onSubmit={handleFingerprintLogin}>
-              <p className="text-sm text-gray-600 mb-4">
-                Utilisez votre appareil pour vous connecter. Si c'est votre première fois, un compte sera créé automatiquement.
-              </p>
-              <Input
-                label="Nom complet"
-                name="fullName"
-                type="text"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Votre nom complet"
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth loading={loading} className="mt-4">
-                Se connecter avec cet appareil
-              </Button>
-            </form>
-          )}
-
-          {authMethod === 'sms' && step === 1 && (
-            <form onSubmit={handleRequestSmsCode}>
-              <p className="text-sm text-gray-600 mb-4">
-                Entrez votre numéro pour recevoir un code de vérification.
-              </p>
-              <Input
-                label="Nom complet"
-                name="fullName"
-                type="text"
-                value={formData.fullName}
-                onChange={handleInputChange}
-                placeholder="Votre nom complet"
-                required
-              />
-              <Input
-                label="Numéro de téléphone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="+228 XX XX XX XX"
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth loading={loading} className="mt-4">
-                Recevoir le code par SMS
-              </Button>
-            </form>
-          )}
-
-          {authMethod === 'sms' && step === 2 && (
-            <form onSubmit={handleVerifyCode}>
-              <p className="text-sm text-gray-600 mb-4">
-                Code envoyé au <strong>{formData.phone}</strong>
-              </p>
-              <Input
-                label="Code de vérification"
-                name="code"
-                type="text"
-                value={formData.code}
-                onChange={handleInputChange}
-                placeholder="Code à 6 chiffres"
-                maxLength={6}
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth loading={loading} className="mt-4">
-                Vérifier et se connecter
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                fullWidth
-                className="mt-2"
-                onClick={() => setStep(1)}
-              >
-                Modifier le numéro
-              </Button>
-            </form>
-          )}
-
-          <p className="mt-6 text-xs text-center text-gray-500">
-            Vos données sont protégées et utilisées uniquement pour le service de signalement.
-          </p>
-
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <Link
-              to="/"
-              className="flex items-center justify-center gap-2 p-3 rounded-lg bg-surface text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <MapPin className="h-5 w-5 text-primary-600" />
-              <div className="text-left">
-                <p className="text-sm font-semibold">Signaler sans compte</p>
-                <p className="text-xs text-gray-500">Rapide et anonyme</p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 };
 

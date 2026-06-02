@@ -27,7 +27,7 @@ class AdminService {
    * @param {String} comment - Commentaire optionnel
    * @returns {Object} - Signalement mis à jour
    */
-  async changeReportStatus(reportId, newStatus, adminId, municipalityId, comment = null) {
+  async changeReportStatus(reportId, newStatus, adminId, municipalityId, comment = null, closureReason = null, closureReasonDetails = null) {
     try {
       // 1. Vérifier que le signalement existe et appartient à la municipalité
       const report = await Report.findOne({
@@ -46,7 +46,7 @@ class AdminService {
       }
 
       // 2. Vérifier que le nouveau statut est valide
-      const validStatuses = ['pending', 'in_progress', 'resolved', 'rejected'];
+      const validStatuses = ['pending', 'assigned', 'in_progress', 'completed', 'resolved', 'rejected'];
       if (!validStatuses.includes(newStatus)) {
         return {
           success: false,
@@ -63,9 +63,13 @@ class AdminService {
       }
 
       // 3b. Vérifier que la transition de statut est autorisée
+      // (assigned/completed sont posés par le cycle des interventions ;
+      //  l'admin peut clôturer ou réorienter depuis ces états)
       const allowedTransitions = {
         pending:     ['in_progress', 'rejected'],
-        in_progress: ['resolved', 'rejected', 'pending'],
+        assigned:    ['in_progress', 'rejected', 'pending'],
+        in_progress: ['completed', 'resolved', 'rejected', 'pending'],
+        completed:   ['resolved', 'rejected', 'in_progress'],
         resolved:    ['in_progress'],
         rejected:    ['pending']
       };
@@ -87,8 +91,33 @@ class AdminService {
         comment: comment
       });
 
+      // 4b. Si statut final (resolved/rejected), closure_reason est requis
+      const FINAL_STATUSES = ['resolved', 'rejected'];
+      if (FINAL_STATUSES.includes(newStatus)) {
+        if (!closureReason) {
+          return {
+            success: false,
+            message: 'closure_reason est requis pour résoudre ou rejeter un signalement'
+          };
+        }
+        const validReasons = {
+          resolved: ['resolved_completed', 'resolved_duplicate', 'resolved_no_action_needed'],
+          rejected: ['rejected_invalid', 'rejected_out_of_scope', 'rejected_duplicate']
+        };
+        if (!validReasons[newStatus].includes(closureReason)) {
+          return {
+            success: false,
+            message: `closure_reason "${closureReason}" incompatible avec statut "${newStatus}"`
+          };
+        }
+      }
+
       // 5. Mettre à jour le statut du signalement
       report.status = newStatus;
+      if (FINAL_STATUSES.includes(newStatus)) {
+        report.closure_reason = closureReason;
+        report.closure_reason_details = closureReasonDetails || null;
+      }
       if (newStatus === 'resolved') {
         report.resolved_at = new Date();
         report.resolved_by = adminId;
@@ -96,6 +125,8 @@ class AdminService {
         // Réouverture : on efface les marqueurs de résolution
         report.resolved_at = null;
         report.resolved_by = null;
+        report.closure_reason = null;
+        report.closure_reason_details = null;
       }
       await report.save();
 
@@ -107,6 +138,24 @@ class AdminService {
       } catch (notifError) {
         logger.warn(`Erreur notification: ${notifError.message}`);
         // Ne pas bloquer le changement de statut si notification échoue
+      }
+
+      // 6b. Diffuser événement temps réel
+      try {
+        const app = global.appInstance || null;
+        const realtime = app && app.get ? app.get('realtime') : null;
+        if (realtime && report.citizen_id) {
+          realtime.emitToUser(report.citizen_id, 'report:status_changed', {
+            reportId, oldStatus, newStatus
+          });
+        }
+        if (realtime) {
+          realtime.emitToMunicipality(municipalityId, 'report:status_changed', {
+            reportId, oldStatus, newStatus
+          }, 'admin');
+        }
+      } catch (rtErr) {
+        logger.warn(`Realtime emit erreur: ${rtErr.message}`);
       }
 
       // 7. Recharger avec relations

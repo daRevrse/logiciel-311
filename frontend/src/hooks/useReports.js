@@ -50,7 +50,8 @@ export const useReports = (filters = {}, autoLoad = true) => {
 
     try {
       const data = await reportService.getReportById(reportId);
-      return data.report || data;
+      // Réponse backend : { success, data: report }
+      return data.data || data.report || data;
     } catch (err) {
       console.error('Erreur chargement signalement:', err);
       setError(err.response?.data?.message || 'Erreur lors du chargement du signalement');

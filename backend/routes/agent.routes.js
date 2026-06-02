@@ -43,8 +43,17 @@ const validateList = [
 
 const validateUpdate = [
   body('status').optional().isIn(['pending', 'in_progress', 'completed']),
-  body('notes').optional({ nullable: true }).isString().isLength({ max: 5000 })
+  body('notes').optional({ nullable: true }).isString().isLength({ max: 5000 }),
+  body('cost').optional({ nullable: true }).isFloat({ min: 0 }),
+  body('started_at').optional({ nullable: true }).isISO8601(),
+  body('completed_at').optional({ nullable: true }).isISO8601()
 ];
+
+router.get(
+  '/dashboard',
+  ...commonGuards,
+  agentController.getDashboard
+);
 
 router.get(
   '/interventions',

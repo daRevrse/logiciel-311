@@ -5,6 +5,26 @@ import api from './api';
  */
 const notificationService = {
   /**
+   * Liste paginée des notifications du citoyen connecté.
+   */
+  async list({ page = 1, limit = 20, unreadOnly = false } = {}) {
+    const params = new URLSearchParams({ page, limit });
+    if (unreadOnly) params.append('unread', 'true');
+    const response = await api.get(`/notifications?${params.toString()}`);
+    return response.data;
+  },
+
+  async markRead(id) {
+    const response = await api.put(`/notifications/${id}/read`);
+    return response.data;
+  },
+
+  async markAllRead() {
+    const response = await api.put('/notifications/read-all');
+    return response.data;
+  },
+
+  /**
    * Obtenir les préférences de notification de l'utilisateur
    * @returns {Promise<Object>} Préférences de notification
    */

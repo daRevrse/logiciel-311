@@ -11,6 +11,13 @@ const publicController = require('../controllers/publicController');
 router.get('/municipalities/:slug', publicController.getMunicipalityPublicPage);
 
 /**
+ * @route GET /api/public/reports/track/:code
+ * @desc  Recherche d'un signalement par tracking_code (sans authentification).
+ * @access Public
+ */
+router.get('/reports/track/:code', publicController.trackReport);
+
+/**
  * @route GET /api/public/municipalities/by-slug/:slug
  * @desc Informations publiques de la mairie pour branding de la page de login admin
  * @access Public

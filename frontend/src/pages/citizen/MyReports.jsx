@@ -1,522 +1,239 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Search,
-  SlidersHorizontal,
-  MapPin,
-  Calendar,
-  Edit,
-  Trash2,
-  Plus,
-  TrendingUp,
-  BarChart3,
-  FileText
-} from 'lucide-react';
-import {
-  Button,
-  Card,
-  StatusBadge,
-  Spinner,
-  Select,
-  Modal
-} from '../../components/common';
+import { Plus, MapPin, Edit, Trash2, Inbox, ChevronRight } from 'lucide-react';
+import { StatusBadge, Spinner, Modal, HeroBackground, ImageWithFallback } from '../../components/common';
+import { IMAGES } from '../../config/images';
+import { formatShortDate, reportDate } from '../../utils/date';
 import reportService from '../../services/reportService';
-import { resolveImageUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
+const STATUS_FILTERS = [
+  { value: '', label: 'Tous' },
+  { value: 'pending', label: 'En attente' },
+  { value: 'in_progress', label: 'En cours' },
+  { value: 'resolved', label: 'Résolus' },
+];
+
+const PAGE_SIZE = 10;
+
 /**
- * Page des signalements de l'utilisateur connecté
+ * Mes signalements — version simple & mobile-first.
  */
 const MyReports = () => {
   const navigate = useNavigate();
 
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalReports: 0,
-    limit: 10
-  });
+  const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState('');
+  const [limit, setLimit] = useState(PAGE_SIZE);
 
-  const [filters, setFilters] = useState({
-    status: '',
-    page: 1,
-    limit: 10
-  });
-
-  const [showFilters, setShowFilters] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [reportToDelete, setReportToDelete] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Statistiques de l'utilisateur
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    in_progress: 0,
-    resolved: 0,
-    rejected: 0
-  });
-
-  // Charger les signalements
-  const loadMyReports = async (customFilters = {}) => {
+  const loadMyReports = async () => {
     setLoading(true);
-
     try {
-      const data = await reportService.getMyReports({ ...filters, ...customFilters });
+      const data = await reportService.getMyReports({
+        status: status || undefined,
+        page: 1,
+        limit,
+      });
       setReports(data.reports || data.data || []);
-
-      if (data.pagination) {
-        setPagination(data.pagination);
-      }
-
-      // Calculer les statistiques à partir des données
-      calculateStats(data.reports || data.data || []);
+      setTotal(data.pagination?.totalReports ?? (data.reports || []).length);
     } catch (err) {
-      console.error('Erreur chargement signalements:', err);
+      console.error('Erreur chargement:', err);
       toast.error('Impossible de charger vos signalements');
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculer les statistiques
-  const calculateStats = (reportsList) => {
-    const newStats = {
-      total: reportsList.length,
-      pending: 0,
-      confirmed: 0,
-      in_progress: 0,
-      resolved: 0,
-      rejected: 0
-    };
-
-    reportsList.forEach((report) => {
-      if (newStats[report.status] !== undefined) {
-        newStats[report.status]++;
-      }
-    });
-
-    setStats(newStats);
-  };
-
-  // Charger au montage et quand les filtres changent
   useEffect(() => {
     loadMyReports();
-  }, [filters.page]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
-  };
-
-  const applyFilters = () => {
-    loadMyReports(filters);
-  };
-
-  const resetFilters = () => {
-    const defaultFilters = {
-      status: '',
-      page: 1,
-      limit: 10
-    };
-    setFilters(defaultFilters);
-    loadMyReports(defaultFilters);
-  };
-
-  const handleReportClick = (reportId) => {
-    navigate(`/reports/${reportId}`);
-  };
-
-  const handleEditReport = (e, reportId) => {
-    e.stopPropagation();
-    navigate(`/reports/${reportId}/edit`);
-  };
-
-  const handleDeleteClick = (e, report) => {
-    e.stopPropagation();
-    setReportToDelete(report);
-    setDeleteModalOpen(true);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, limit]);
 
   const handleDeleteConfirm = async () => {
-    if (!reportToDelete) return;
-
+    if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await reportService.deleteReport(reportToDelete.id);
-      toast.success('Signalement supprimé avec succès');
-      setDeleteModalOpen(false);
-      setReportToDelete(null);
-      loadMyReports(); // Recharger la liste
+      await reportService.deleteReport(deleteTarget.id);
+      toast.success('Signalement retiré');
+      setDeleteTarget(null);
+      loadMyReports();
     } catch (err) {
-      console.error('Erreur suppression:', err);
-      toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+      toast.error('Erreur de suppression');
     } finally {
       setDeleting(false);
     }
   };
 
-  const changePage = (newPage) => {
-    setFilters((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const statusOptions = [
-    { value: '', label: 'Tous les statuts' },
-    { value: 'pending', label: 'En attente' },
-    { value: 'confirmed', label: 'Confirmé' },
-    { value: 'in_progress', label: 'En cours' },
-    { value: 'resolved', label: 'Résolu' },
-    { value: 'rejected', label: 'Rejeté' }
-  ];
+  const canLoadMore = !loading && reports.length < total;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Mes signalements
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Gérez et suivez vos signalements
-          </p>
+    <div className="min-h-screen bg-surface">
+      {/* En-tête */}
+      <div className="relative overflow-hidden bg-navy-deep text-white">
+        <HeroBackground image={IMAGES.heroStreet} opacity={0.25} />
+        <div className="relative z-10 max-w-2xl mx-auto px-4 pt-8 pb-16">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Mes signalements</h1>
+          <p className="text-white/60 text-sm mt-1">{total} signalement{total > 1 ? 's' : ''} au total</p>
+
+          <button
+            onClick={() => navigate('/reports/create')}
+            className="mt-6 w-full flex items-center justify-center gap-2 px-6 py-4 bg-turquoise text-navy-deep font-bold rounded-2xl shadow-lg shadow-turquoise/20 active:scale-[0.98] transition-transform"
+          >
+            <Plus className="h-5 w-5" />
+            Nouveau signalement
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 mt-8 pb-24">
+        {/* Filtres de statut */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1 scrollbar-none">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setStatus(f.value); setLimit(PAGE_SIZE); }}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                status === f.value
+                  ? 'bg-navy-deep text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-turquoise'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
-        {/* Statistiques */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-            <div className="text-xs text-gray-500">Total</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <FileText className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.pending}</div>
-            <div className="text-xs text-gray-500">En attente</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.confirmed}</div>
-            <div className="text-xs text-gray-500">Confirmés</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-5 w-5 text-orange-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.in_progress}</div>
-            <div className="text-xs text-gray-500">En cours</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.resolved}</div>
-            <div className="text-xs text-gray-500">Résolus</div>
-          </Card>
-
-          <Card className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="h-5 w-5 text-red-600" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{stats.rejected}</div>
-            <div className="text-xs text-gray-500">Rejetés</div>
-          </Card>
-        </div>
-
-        {/* Filtres et actions */}
-        <Card className="mb-6">
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            {/* Filtres */}
-            <div className="flex-1">
-              <Select
-                label="Filtrer par statut"
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                options={statusOptions}
-              />
-            </div>
-
-            {/* Boutons */}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Filtres
-              </Button>
-
-              <Button variant="primary" onClick={applyFilters}>
-                Rechercher
-              </Button>
-
-              <Button variant="primary" onClick={() => navigate('/reports/create')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouveau
-              </Button>
-            </div>
-          </div>
-
-          {/* Filtres avancés (masquables) */}
-          {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-end justify-end">
-                <Button variant="secondary" onClick={resetFilters}>
-                  Réinitialiser
-                </Button>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Liste des signalements */}
-        {loading ? (
-          <div className="flex justify-center py-12">
+        {loading && reports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Spinner size="lg" />
+            <p className="text-sm text-gray-500">Chargement…</p>
           </div>
         ) : reports.length === 0 ? (
-          <Card>
-            <div className="text-center py-12">
-              <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucun signalement trouvé
-              </h3>
-              <p className="text-gray-500 mb-6">
-                Vous n'avez pas encore créé de signalement
-              </p>
-              <Button variant="primary" onClick={() => navigate('/reports/create')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Créer mon premier signalement
-              </Button>
-            </div>
-          </Card>
+          <div className="text-center py-12">
+            <ImageWithFallback
+              src={IMAGES.emptyReports}
+              alt=""
+              className="w-36 h-36 rounded-3xl mx-auto mb-5 shadow-lg"
+            >
+              <Inbox className="h-10 w-10 text-white/70" />
+            </ImageWithFallback>
+            <p className="text-navy-deep font-bold">Aucun signalement</p>
+            <p className="text-gray-500 text-sm mt-1 mb-5">
+              {status ? 'Aucun signalement avec ce statut.' : "Vous n'avez pas encore créé de signalement."}
+            </p>
+            <button
+              onClick={() => navigate('/reports/create')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-turquoise text-navy-deep font-bold rounded-xl active:scale-95 transition-transform"
+            >
+              <Plus className="h-4 w-4" />
+              Créer mon premier signalement
+            </button>
+          </div>
         ) : (
           <>
-            {/* Résultats */}
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                {pagination.totalReports} signalement(s) trouvé(s)
-              </p>
-              <p className="text-sm text-gray-600">
-                Page {pagination.currentPage} sur {pagination.totalPages}
-              </p>
-            </div>
-
-            <div className="space-y-4 mb-6">
+            <div className="space-y-3">
               {reports.map((report) => (
-                <Card
+                <div
                   key={report.id}
-                  hoverable
-                  onClick={() => handleReportClick(report.id)}
-                  className="cursor-pointer"
+                  className="bg-white border border-gray-100 rounded-2xl shadow-sm relative overflow-hidden"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                    {/* Photo miniature */}
-                    {report.photos && report.photos.length > 0 ? (
-                      <div className="flex-shrink-0">
-                        <img
-                          src={resolveImageUrl(report.photos[0].photo_url)}
-                          alt="Photo du signalement"
-                          className="w-full sm:w-32 h-32 object-cover rounded-lg"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-shrink-0 w-full sm:w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <MapPin className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-
-                    {/* Contenu */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            {report.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 flex items-center">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {report.address}
-                          </p>
-                        </div>
-                        <StatusBadge status={report.status} />
-                      </div>
-
-                      <p className="text-gray-700 line-clamp-2 mb-3">
-                        {report.description}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {formatDate(report.created_at)}
-                        </span>
-                        <span>{report.supports_count || 0} appuis</span>
-                        {report.category && (
-                          <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                            {report.category.name}
+                  <div
+                    className={`absolute top-0 bottom-0 left-0 w-1.5 ${
+                      report.status === 'resolved'
+                        ? 'bg-emerald-500'
+                        : report.status === 'completed'
+                        ? 'bg-cyan-500'
+                        : report.status === 'in_progress'
+                        ? 'bg-amber-500'
+                        : report.status === 'assigned'
+                        ? 'bg-blue-500'
+                        : 'bg-slate-300'
+                    }`}
+                  />
+                  <button
+                    onClick={() => navigate(`/reports/${report.id}`)}
+                    className="w-full text-left p-4 pl-6"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-turquoise bg-turquoise/10 px-2 py-0.5 rounded">
+                            {report.category?.name || 'Général'}
                           </span>
-                        )}
-                        <span className="ml-auto font-medium text-primary-600">
-                          Priorité: {report.priority_score?.toFixed(1) || '0.0'}
-                        </span>
-                      </div>
-
-                      {/* Actions (seulement pour les signalements en attente) */}
-                      {report.status === 'pending' && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => handleEditReport(e, report.id)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Modifier
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => handleDeleteClick(e, report)}
-                            className="text-red-600 hover:bg-red-50 border-red-200"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Supprimer
-                          </Button>
+                          <span className="text-[10px] font-medium text-gray-400">
+                            {formatShortDate(reportDate(report))}
+                          </span>
                         </div>
-                      )}
+                        <h3 className="font-bold text-navy-deep leading-snug truncate">{report.title}</h3>
+                        <div className="flex items-center gap-1.5 mt-1.5 text-gray-500">
+                          <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span className="text-xs truncate">{report.address}</span>
+                        </div>
+                      </div>
+                      <StatusBadge status={report.status} />
                     </div>
-                  </div>
-                </Card>
+                  </button>
+
+                  {/* Actions (brouillons modifiables) */}
+                  {report.status === 'pending' && (
+                    <div className="flex border-t border-gray-100">
+                      <button
+                        onClick={() => navigate(`/reports/${report.id}/edit`)}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        <Edit className="h-4 w-4" /> Modifier
+                      </button>
+                      <div className="w-px bg-gray-100" />
+                      <button
+                        onClick={() => setDeleteTarget(report)}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-rose-500 hover:bg-rose-50 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" /> Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <Card>
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="secondary"
-                    onClick={() => changePage(pagination.currentPage - 1)}
-                    disabled={pagination.currentPage === 1}
-                  >
-                    Précédent
-                  </Button>
-
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                      .filter((page) => {
-                        // Afficher seulement quelques pages autour de la page actuelle
-                        return (
-                          page === 1 ||
-                          page === pagination.totalPages ||
-                          Math.abs(page - pagination.currentPage) <= 2
-                        );
-                      })
-                      .map((page, index, array) => {
-                        // Ajouter "..." entre les pages non consécutives
-                        const showEllipsis = index > 0 && page - array[index - 1] > 1;
-
-                        return (
-                          <React.Fragment key={page}>
-                            {showEllipsis && <span className="text-gray-400">...</span>}
-                            <button
-                              onClick={() => changePage(page)}
-                              className={`px-3 py-1 rounded ${
-                                page === pagination.currentPage
-                                  ? 'bg-primary-600 text-white'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          </React.Fragment>
-                        );
-                      })}
-                  </div>
-
-                  <Button
-                    variant="secondary"
-                    onClick={() => changePage(pagination.currentPage + 1)}
-                    disabled={pagination.currentPage === pagination.totalPages}
-                  >
-                    Suivant
-                  </Button>
-                </div>
-              </Card>
+            {canLoadMore && (
+              <button
+                onClick={() => setLimit((l) => l + PAGE_SIZE)}
+                className="mt-5 w-full py-3.5 rounded-2xl bg-white border border-gray-200 text-navy-deep font-bold text-sm hover:border-turquoise transition-colors"
+              >
+                Voir plus
+              </button>
             )}
           </>
         )}
       </div>
 
-      {/* Modal de confirmation de suppression */}
-      <Modal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        title="Confirmer la suppression"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Êtes-vous sûr de vouloir supprimer ce signalement ?
+      {/* Confirmation de suppression */}
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer le signalement">
+        <div className="p-2 text-center">
+          <Trash2 className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <p className="text-gray-600 text-sm mb-6">
+            Cette action est définitive. Confirmez-vous le retrait de ce signalement ?
           </p>
-          {reportToDelete && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-1">
-                {reportToDelete.title}
-              </h4>
-              <p className="text-sm text-gray-600">{reportToDelete.address}</p>
-            </div>
-          )}
-          <p className="text-sm text-red-600">
-            Cette action est irréversible.
-          </p>
-
-          <div className="flex gap-3 justify-end pt-4">
-            <Button
-              variant="secondary"
-              onClick={() => setDeleteModalOpen(false)}
-              disabled={deleting}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
             >
               Annuler
-            </Button>
-            <Button
-              variant="primary"
+            </button>
+            <button
               onClick={handleDeleteConfirm}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="flex-1 py-3 font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50"
             >
-              {deleting ? (
-                <>
-                  <Spinner size="sm" className="mr-2" />
-                  Suppression...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
-                </>
-              )}
-            </Button>
+              {deleting ? 'Suppression…' : 'Supprimer'}
+            </button>
           </div>
         </div>
       </Modal>

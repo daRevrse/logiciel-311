@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Inbox, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Inbox, Loader2, ClipboardCheck } from 'lucide-react';
 import agentService from '../../services/agentService';
-import AgentHome from './AgentHome';
 
 /**
  * Page "Mes interventions" de l'agent.
@@ -62,7 +61,7 @@ function InterventionCard({ intervention, badgeClass }) {
   return (
     <Link
       to={`/agent/interventions/${intervention.id}`}
-      className="block rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md hover:border-primary/50 transition-all"
+      className="block rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md hover:border-turquoise transition-all"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 flex-1">
@@ -83,7 +82,6 @@ function InterventionCard({ intervention, badgeClass }) {
             color: category.color || '#334155'
           }}
         >
-          {category.icon && <span aria-hidden="true">{category.icon}</span>}
           <span>{category.name}</span>
         </div>
       )}
@@ -182,7 +180,27 @@ const MyInterventions = () => {
   const active = interventions.filter((i) => i.status !== 'cancelled');
 
   if (active.length === 0) {
-    return <AgentHome />;
+    return (
+      <div className="py-2">
+        <div className="mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-navy-deep dark:text-slate-100">
+            Mes interventions
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Retrouvez vos tâches assignées et leur avancement.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-turquoise/10 flex items-center justify-center mx-auto mb-4 text-turquoise">
+            <ClipboardCheck size={28} />
+          </div>
+          <p className="text-navy-deep dark:text-slate-100 font-bold">Aucune intervention assignée</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Les interventions que la mairie vous confie apparaîtront ici.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const grouped = GROUPS.map((g) => ({
@@ -193,7 +211,7 @@ const MyInterventions = () => {
   return (
     <div className="py-2">
       <div className="mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <h1 className="text-xl sm:text-2xl font-bold text-navy-deep dark:text-slate-100">
           Mes interventions
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">

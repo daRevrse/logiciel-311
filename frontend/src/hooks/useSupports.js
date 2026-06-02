@@ -23,8 +23,10 @@ export const useSupports = (reportId = null) => {
 
     try {
       const data = await supportService.checkSupport(id);
-      setHasSupported(data.hasSupported || false);
-      return data.hasSupported;
+      // Réponse backend : { success, data: { hasSupported } }
+      const has = data.data?.hasSupported ?? data.hasSupported ?? false;
+      setHasSupported(has);
+      return has;
     } catch (err) {
       console.error('Erreur vérification appui:', err);
       setError(err.response?.data?.message || 'Erreur lors de la vérification');
@@ -44,8 +46,10 @@ export const useSupports = (reportId = null) => {
 
     try {
       const data = await supportService.getSupportCount(id);
-      setSupportCount(data.count || 0);
-      return data.count;
+      // Réponse backend : { success, data: { supportsCount } }
+      const count = data.data?.supportsCount ?? data.count ?? 0;
+      setSupportCount(count);
+      return count;
     } catch (err) {
       console.error('Erreur comptage appuis:', err);
       setError(err.response?.data?.message || 'Erreur lors du comptage');

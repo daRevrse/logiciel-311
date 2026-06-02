@@ -45,11 +45,31 @@ const adminService = {
    * @param {string} comment - Commentaire optionnel
    * @returns {Promise<Object>} Signalement mis à jour
    */
-  async changeStatus(reportId, newStatus, comment = '') {
+  async changeStatus(reportId, newStatus, comment = '', closureReason = null, closureReasonDetails = null) {
     const response = await api.post(`/admin/reports/${reportId}/status`, {
       status: newStatus,
-      comment
+      comment,
+      closure_reason: closureReason,
+      closure_reason_details: closureReasonDetails
     });
+    return response.data;
+  },
+
+  async listComments(reportId) {
+    const response = await api.get(`/reports/${reportId}/comments`);
+    return response.data;
+  },
+
+  async addComment(reportId, body, isInternal = false) {
+    const response = await api.post(`/reports/${reportId}/comments`, {
+      body,
+      is_internal: isInternal
+    });
+    return response.data;
+  },
+
+  async deleteComment(reportId, commentId) {
+    const response = await api.delete(`/reports/${reportId}/comments/${commentId}`);
     return response.data;
   },
 
@@ -199,8 +219,10 @@ const adminService = {
    * Obtenir tous les utilisateurs
    * @returns {Promise<Array>} Liste des utilisateurs
    */
-  async getUsers() {
-    const response = await api.get('/admin/users');
+  async getUsers(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.role) qs.append('role', params.role);
+    const response = await api.get(`/admin/users${qs.toString() ? `?${qs.toString()}` : ''}`);
     return response.data;
   },
 
@@ -232,6 +254,16 @@ const adminService = {
    */
   async deleteUser(userId) {
     const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  async setUserActive(userId, isActive) {
+    const response = await api.put(`/admin/users/${userId}`, { is_active: isActive });
+    return response.data;
+  },
+
+  async resetUserPassword(userId) {
+    const response = await api.post(`/admin/users/${userId}/reset-password`);
     return response.data;
   },
 
@@ -400,6 +432,16 @@ const adminService = {
     return response.data;
   },
 
+  async setAgentActive(id, isActive) {
+    const response = await api.patch(`/admin/agents/${id}`, { is_active: isActive });
+    return response.data;
+  },
+
+  async resetAgentPassword(id) {
+    const response = await api.post(`/admin/agents/${id}/reset-password`);
+    return response.data;
+  },
+
   async listAdminCategories() {
     const response = await api.get('/admin/categories');
     return response.data;
@@ -414,6 +456,7 @@ const adminService = {
     if (params.status) qs.append('status', params.status);
     if (params.agent_id) qs.append('agent_id', params.agent_id);
     if (params.category_id) qs.append('category_id', params.category_id);
+    if (params.report_id) qs.append('report_id', params.report_id);
     if (params.page) qs.append('page', params.page);
     if (params.limit) qs.append('limit', params.limit);
     const response = await api.get(`/admin/interventions${qs.toString() ? `?${qs.toString()}` : ''}`);

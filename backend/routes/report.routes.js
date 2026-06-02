@@ -8,6 +8,7 @@ const { logActivity } = require('../middlewares/requestLogger');
 const { checkReportOwnership } = require('../middlewares/multiTenant');
 const uploadService = require('../services/uploadService');
 const supportController = require('../controllers/supportController');
+const commentRoutes = require('./comment.routes');
 
 
 /**
@@ -179,5 +180,8 @@ router.delete('/:reportId/photos/:photoId',
   logActivity('delete_photo', 'report_photo'),
   reportController.deletePhoto
 );
+
+// Routes commentaires imbriquées : /api/reports/:reportId/comments
+router.use('/:reportId/comments', commentRoutes);
 
 module.exports = router;
